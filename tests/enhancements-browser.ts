@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, expect } from "playwright/test";
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -46,6 +47,7 @@ try {
   await guest.goto(origin + "/e/" + id);
   await guest.getByLabel("Your name").fill("Alex");
   await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
+  await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await guest
     .getByRole("button", { name: "Take my seat", exact: true })
@@ -212,7 +214,7 @@ try {
   ).toBeVisible();
   await control("lock");
   await expect(
-    guest.getByRole("heading", { name: "Round 1 guesses", exact: true }),
+    guest.getByRole("heading", { name: "Final Scorecard", exact: true }),
   ).toBeVisible();
   await expect(host.locator(".host-readiness")).toHaveCount(0);
   assert.deepEqual(errors, []);

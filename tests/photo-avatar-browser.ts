@@ -44,17 +44,16 @@ try {
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Photo guest");
   await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
+  await guest.getByText("Add an avatar (optional)", { exact: true }).click();
   const join = guest.getByRole("button", { name: "Take my seat", exact: true });
-  assert.equal(await join.isDisabled(), true);
-  await guest
-    .getByLabel("Avatar photo", { exact: true })
-    .setInputFiles({
-      name: "bad.svg",
-      mimeType: "image/svg+xml",
-      buffer: Buffer.from("<svg/>"),
-    });
+  assert.equal(await join.isDisabled(), false);
+  await guest.getByLabel("Avatar photo", { exact: true }).setInputFiles({
+    name: "bad.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from("<svg/>"),
+  });
   await guest.getByRole("alert").filter({ hasText: "Choose a JPEG" }).waitFor();
-  assert.equal(await join.isDisabled(), true);
+  assert.equal(await join.isDisabled(), false);
   await guest
     .getByLabel("Avatar photo", { exact: true })
     .setInputFiles({ name: "test.png", mimeType: "image/png", buffer: photo });
@@ -84,13 +83,11 @@ try {
       await host.locator(".avatar-icon img").waitFor();
     });
   await guest.getByText("Draw or edit your icon", { exact: true }).click();
-  await guest
-    .getByLabel("Avatar photo", { exact: true })
-    .setInputFiles({
-      name: "second.png",
-      mimeType: "image/png",
-      buffer: second,
-    });
+  await guest.getByLabel("Avatar photo", { exact: true }).setInputFiles({
+    name: "second.png",
+    mimeType: "image/png",
+    buffer: second,
+  });
   await guest.getByRole("button", { name: "Save icon", exact: true }).click();
   await guest.locator(".avatar-editor[open]").waitFor({ state: "hidden" });
   const token = await guest.evaluate(() =>
@@ -172,12 +169,17 @@ try {
   );
   await control("lock");
   await control("reveal");
-  await recovered.locator(".guess-list .avatar-icon img").waitFor();
+  await recovered
+    .locator(".final-scorecard .event-line .avatar-icon img")
+    .waitFor();
   for (let r = 2; r <= 8; r++) {
     await control("next");
     await control("reveal");
   }
   await control("summary");
+  await recovered
+    .getByText("Final rankings & evening recap", { exact: true })
+    .click();
   await recovered.locator(".leader-row .avatar-icon img").waitFor();
   await recovered.screenshot({
     path: "test-artifacts/photo-avatar/summary-phone.png",

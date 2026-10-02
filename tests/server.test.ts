@@ -127,7 +127,12 @@ test("persistent multi-session tasting: access, validation, reveals, scoring, CS
             await call(
               path + "/join",
               "POST",
-              { name: "Blank drawing", avatar: [] },
+              {
+                name: "Invalid drawing",
+                avatar: [
+                  { color: "not-an-approved-color", points: [[10, 10]] },
+                ],
+              },
               randomUUID(),
             )
           ).status,

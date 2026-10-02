@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { choices } from "../src/shared.ts";
@@ -44,6 +45,7 @@ try {
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Alex");
   await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
+  await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await button(guest, "Take my seat").click();
   await button(host, "Remove Alex").waitFor({ timeout: 15000 });
@@ -115,6 +117,7 @@ try {
     .waitFor();
   await button(guest, "New guest").click();
   await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("5731");
+  await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await button(guest, "Take my seat").click();
   await guest.locator("#guess-1").waitFor();

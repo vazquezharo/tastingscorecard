@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, expect } from "playwright/test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -55,6 +56,7 @@ try {
   await guest.goto(origin + "/e/" + id);
   await guest.getByLabel("Your name").fill("Alex");
   await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
+  await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await guest
     .getByRole("button", { name: "Take my seat", exact: true })
@@ -264,7 +266,9 @@ try {
   await expect(
     host.getByText("Correct pouring order", { exact: true }),
   ).toHaveCount(0);
-  await expect(guest.getByRole("heading", { name: /Grenache/ })).toBeVisible();
+  await expect(
+    guest.locator(".personal-answer strong").filter({ hasText: "Grenache" }),
+  ).toBeVisible();
   await expect(display.locator(".table-map")).toHaveCount(0);
   assert.deepEqual(errors, []);
   console.log(

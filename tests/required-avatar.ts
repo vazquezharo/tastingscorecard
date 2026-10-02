@@ -39,7 +39,8 @@ try {
   await p.getByLabel("Your name").fill("Drawing guest");
   await p.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   const join = p.getByRole("button", { name: "Take my seat", exact: true });
-  assert.equal(await join.isDisabled(), true);
+  assert.equal(await join.isDisabled(), false);
+  await p.getByText("Add an avatar (optional)", { exact: true }).click();
   const canvas = p.getByRole("img", {
     name: "Avatar drawing area",
     exact: true,
@@ -79,7 +80,7 @@ try {
   });
   assert.equal(await join.isDisabled(), false);
   await p.getByRole("button", { name: "Undo", exact: true }).click();
-  assert.equal(await join.isDisabled(), true);
+  assert.equal(await join.isDisabled(), false);
   await canvas.focus();
   await p.keyboard.press("Space");
   await p.keyboard.press("ArrowRight");
@@ -88,7 +89,7 @@ try {
   assert.equal(await join.isDisabled(), false);
   assert.equal(await canvas.locator("polyline").count(), 1);
   await p.getByRole("button", { name: "Clear drawing", exact: true }).click();
-  assert.equal(await join.isDisabled(), true);
+  assert.equal(await join.isDisabled(), false);
   await canvas.focus();
   await p.keyboard.press("Space");
   await p.keyboard.press("ArrowUp");
@@ -131,8 +132,8 @@ try {
   console.log(
     JSON.stringify({
       passed: true,
-      requiredJoin: true,
-      blankAndClearedBlocked: true,
+      optionalJoin: true,
+      blankAndClearedAllowed: true,
       touchAndKeyboardDrawing: true,
       canvasWidth: box.width,
       toolHeightMinimum: 56,

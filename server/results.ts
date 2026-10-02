@@ -119,15 +119,35 @@ export function publicEvent(
   };
   const me = e.participants.find((p) => ownsSeat(p, tokenHash));
   if (me) {
-    const {
-      tokenHash: _,
-      tokenAliases: _aliases,
-      recoveryHash: _pin,
-      recoveryFailures: _failures,
-      recoveryBlockedUntil: _blocked,
-      ...safe
-    } = me;
-    out.me = { ...safe, recoveryEnabled: !!me.recoveryHash };
+    // Explicit allowlist: future stored metadata must never become guest payloads.
+    const safeEntry = (entry: import("../src/shared.js").Entry) => ({
+      guess: entry.guess,
+      rating: entry.rating,
+      notes: entry.notes,
+      revision: entry.revision,
+      ...(entry.enteredBy === "host" ? { enteredBy: "host" as const } : {}),
+    });
+    out.me = {
+      id: me.id,
+      name: me.name,
+      emoji: me.emoji,
+      avatar: me.avatar,
+      avatarPhoto: me.avatarPhoto,
+      draftScope: me.draftScope,
+      entries: Object.fromEntries(
+        Object.entries(me.entries)
+          .filter(
+            ([round]) =>
+              Number.isInteger(Number(round)) &&
+              Number(round) >= 1 &&
+              Number(round) <= e.unlocked,
+          )
+          .map(([round, entry]) => [round, safeEntry(entry)]),
+      ),
+      practice: me.practice ? safeEntry(me.practice) : undefined,
+      submitted: me.submitted,
+      recoveryEnabled: !!me.recoveryHash,
+    };
   }
   if (host) {
     out.bottlePhotos = e.bottlePhotos;
@@ -161,7 +181,7 @@ export function publicEvent(
     if (e.presenting > revealed)
       out.results.push(wineResult(e, e.presenting, false));
   }
-  if (e.phase === "summary") {
+  if (e.phase === "summary" && revealed === 8 && !pending) {
     const ranked = e.participants
       .map((p) => ({
         name: p.name,
@@ -243,4 +263,44 @@ export function csv(e: Event) {
   ]
     .map((row) => row.map(cell).join(","))
     .join("\r\n");
+}
+
+export function assistedEvent(
+  e: Event,
+): import("../src/shared.js").AssistedEvent {
+  return {
+    id: e.id,
+    name: e.name,
+    phase: e.phase,
+    unlocked: e.unlocked,
+    revision: e.revision,
+    generation: e.generation ?? 0,
+    choices: eventChoices(e),
+    guests: e.participants.map((p) => ({
+      id: p.id,
+      name: p.name,
+      submitted: p.submitted,
+      ...validation(p.entries, eventChoices(e)),
+      entries: Object.fromEntries(
+        Object.entries(p.entries)
+          .filter(
+            ([round]) =>
+              Number.isInteger(Number(round)) &&
+              Number(round) >= 1 &&
+              Number(round) <= e.unlocked,
+          )
+          .map(([round, entry]) => [
+            round,
+            {
+              guess: entry.guess,
+              rating: entry.rating,
+              revision: entry.revision,
+              ...(entry.enteredBy === "host"
+                ? { enteredBy: "host" as const }
+                : {}),
+            },
+          ]),
+      ),
+    })),
+  };
 }

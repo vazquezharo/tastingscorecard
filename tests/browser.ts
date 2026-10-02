@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, type Page } from "playwright";
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -111,6 +112,7 @@ try {
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Harold");
   await guest.getByLabel("Create a recovery PIN").fill("4826");
+  await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await guest.getByRole("button", { name: "Take my seat" }).click();
   await waitText(guest, "A good night awaits.");
@@ -124,11 +126,13 @@ try {
   await other.goto(`${origin}/e/${id}`);
   await other.getByLabel("Your name").fill("Harold");
   await other.getByLabel("Create a recovery PIN").fill("5731");
+  await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await other.getByRole("button", { name: "Take my seat" }).click();
   await waitText(other, "That name is already in use");
   await other.getByLabel("Your name").fill("Casey");
   await other.getByLabel("Create a recovery PIN").fill("5731");
+  await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await other.getByRole("button", { name: "Take my seat" }).click();
   await waitText(other, "Casey");
@@ -290,7 +294,7 @@ try {
     .getByRole("button", { name: "Lock submissions & open results" })
     .click();
   await waitText(projector, "THE GUESSES ARE IN");
-  await waitText(guest, "THE GUESSES ARE IN");
+  await waitText(guest, "Final Scorecard");
   assert.equal(await guest.locator("#guess-1").count(), 0);
   assert.ok(
     !(await projector.locator("body").innerText()).includes("La Enfermera"),
@@ -309,7 +313,7 @@ try {
       .filter({ hasText: key[r - 1] })
       .waitFor();
     await guest
-      .locator(".wine-revealed h1")
+      .locator(`.personal-round:nth-child(${r}) .personal-answer strong`)
       .filter({ hasText: key[r - 1] })
       .waitFor();
     if (r === 1) {
@@ -333,6 +337,9 @@ try {
   }
   await host.getByRole("button", { name: "Open final summary" }).click();
   await waitText(projector, "The leaderboard");
+  await guest
+    .getByText("Final rankings & evening recap", { exact: true })
+    .click();
   await waitText(guest, "The leaderboard");
   assert.ok(
     (await projector.locator(".leader-row").first().innerText()).includes("8"),

@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import AxeBuilder from "@axe-core/playwright";
@@ -54,6 +55,7 @@ try {
     await guests[i]
       .getByLabel("Create a recovery PIN", { exact: true })
       .fill("4826");
+    await openOptionalAvatar(guests[i]);
     await guests[i].locator(".drawing-surface").click();
     await guests[i]
       .getByRole("button", { name: "Take my seat", exact: true })

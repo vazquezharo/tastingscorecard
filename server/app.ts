@@ -17,9 +17,10 @@ import {
   validRating,
   timerRemaining,
   type Event,
+  type Participant,
 } from "../src/shared.js";
 import { makeStore, type Store } from "./store.js";
-import { csv, publicEvent } from "./results.js";
+import { assistedEvent, csv, publicEvent } from "./results.js";
 class HttpError extends Error {
   constructor(
     public status: number,
@@ -289,11 +290,6 @@ export function createApp(store?: Store) {
         400,
         "Invalid drawing. Clear it and try again.",
       );
-      assert(
-        avatar.length > 0 || !!avatarPhoto,
-        400,
-        "Draw or upload an avatar before taking your seat.",
-      );
       e.participants.push({
         id: randomBytes(12).toString("hex"),
         name: name.trim(),
@@ -486,6 +482,114 @@ export function createApp(store?: Store) {
     });
     res.json(publicEvent(await event(req), token));
   });
+  // Both entry paths share the same validation, revisions and submission invalidation.
+  function saveScoredEntry(
+    e: Event,
+    p: Participant,
+    round: number,
+    body: Record<string, unknown>,
+    assisted: boolean,
+  ) {
+    const previous = p.entries[round];
+    assert(
+      body.revision === (previous?.revision ?? 0),
+      409,
+      "This round changed on another device. Load the latest saved version before editing.",
+    );
+    const { guess, rating } = body;
+    const notes = assisted ? (previous?.notes ?? "") : body.notes;
+    assert(
+      typeof guess === "string" &&
+        (guess === "" || eventChoices(e).includes(guess)),
+      400,
+      "Select an available wine type.",
+    );
+    assert(
+      rating === null || validRating(rating),
+      400,
+      "Rating must be 1.0–10.0 in 0.1 increments, or blank.",
+    );
+    assert(
+      typeof notes === "string" && notes.length <= 2000,
+      400,
+      "Notes can be up to 2,000 characters.",
+    );
+    p.entries[round] = {
+      guess,
+      rating,
+      notes,
+      revision: (previous?.revision ?? 0) + 1,
+      ...(assisted ? { enteredBy: "host" as const } : {}),
+    };
+    if (!validation(p.entries, eventChoices(e)).valid) p.submitted = false;
+  }
+  function submitScoredCard(e: Event, p: Participant) {
+    assert(
+      e.phase === "tasting" && e.unlocked === 8,
+      423,
+      "All eight rounds must be open and submissions unlocked.",
+    );
+    assert(
+      validation(p.entries, eventChoices(e)).valid,
+      400,
+      "Complete eight guesses and ratings using every wine type exactly once.",
+    );
+    p.submitted = true;
+  }
+  app.get(base + "/api/events/:id/assisted", host, async (req, res) => {
+    res.json(assistedEvent(await event(req)));
+  });
+  app.put(
+    base + "/api/events/:id/assisted/:participantId/entries/:round",
+    host,
+    async (req, res) => {
+      await db!.mutate(id(req), (e) => {
+        assert(
+          e.phase === "tasting",
+          423,
+          "Submissions are not open. Your last confirmed saves are preserved.",
+        );
+        const round = Number(req.params.round);
+        assert(
+          Number.isInteger(round) && round >= 1 && round <= e.unlocked,
+          403,
+          "This round has not been unlocked.",
+        );
+        assert(
+          req.body.generation === (e.generation ?? 0),
+          409,
+          "This tasting was reset. Load its current scorecards.",
+        );
+        const p = e.participants.find((p) => p.id === req.params.participantId);
+        assert(p, 404, "This guest is no longer registered.");
+        saveScoredEntry(e, p, round, req.body, true);
+      });
+      res.json(assistedEvent(await event(req)));
+    },
+  );
+  app.post(
+    base + "/api/events/:id/assisted/:participantId/submit",
+    host,
+    async (req, res) => {
+      await db!.mutate(id(req), (e) => {
+        const p = e.participants.find((p) => p.id === req.params.participantId);
+        assert(p, 404, "This guest is no longer registered.");
+        assert(
+          req.body.generation === (e.generation ?? 0) &&
+            Array.isArray(req.body.entryRevisions) &&
+            req.body.entryRevisions.length === 8 &&
+            req.body.entryRevisions.every(
+              (revision: unknown, i: number) =>
+                revision === (p.entries[i + 1]?.revision ?? 0),
+            ),
+          409,
+          "The scorecard changed. Review the latest answers before submitting.",
+        );
+        submitScoredCard(e, p);
+      });
+      res.json(assistedEvent(await event(req)));
+    },
+  );
   app.put(base + "/api/events/:id/entries/:round", async (req, res) => {
     const token = tokenHash(req);
     assert(token, 401, "Join this event first.");
@@ -503,35 +607,7 @@ export function createApp(store?: Store) {
       );
       const p = e.participants.find((p) => ownsSeat(p, token));
       assert(p, 401, "Join this event first.");
-      const previous = p.entries[round];
-      assert(
-        req.body.revision === (previous?.revision ?? 0),
-        409,
-        "This round changed in another tab. Reload the saved version before editing.",
-      );
-      const { guess, rating, notes } = req.body;
-      assert(
-        guess === "" || eventChoices(e).includes(guess),
-        400,
-        "Select an available wine type.",
-      );
-      assert(
-        rating === null || validRating(rating),
-        400,
-        "Rating must be 1.0–10.0 in 0.1 increments, or blank.",
-      );
-      assert(
-        typeof notes === "string" && notes.length <= 2000,
-        400,
-        "Notes can be up to 2,000 characters.",
-      );
-      p.entries[round] = {
-        guess,
-        rating,
-        notes,
-        revision: (previous?.revision ?? 0) + 1,
-      };
-      if (!validation(p.entries, eventChoices(e)).valid) p.submitted = false;
+      saveScoredEntry(e, p, round, req.body, false);
     });
     res.json(publicEvent(await event(req), token));
   });
@@ -545,12 +621,7 @@ export function createApp(store?: Store) {
       );
       const p = e.participants.find((p) => ownsSeat(p, token));
       assert(p, 401, "Join first.");
-      assert(
-        validation(p.entries, eventChoices(e)).valid,
-        400,
-        "Complete eight guesses and ratings using every wine type exactly once.",
-      );
-      p.submitted = true;
+      submitScoredCard(e, p);
     });
     res.json(publicEvent(await event(req), token));
   });

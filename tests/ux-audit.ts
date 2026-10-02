@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, type Page } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
@@ -99,6 +100,7 @@ try {
   await button(guest, "New guest").click();
   await guest.getByLabel("Your name").fill("Alex");
   await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
+  await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await button(guest, "Take my seat").click();
   await visible(guest, "A good night awaits.");
@@ -106,11 +108,13 @@ try {
   await other.goto(`${origin}/e/${id}`);
   await other.getByLabel("Your name").fill("Alex");
   await other.getByLabel("Create a recovery PIN", { exact: true }).fill("5731");
+  await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await button(other, "Take my seat").click();
   await visible(other, "That name is already in use");
   await capture(other, "duplicate-name-error");
   await other.getByLabel("Your name").fill("Blair");
+  await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await button(other, "Take my seat").click();
   await visible(other, "A good night awaits.");

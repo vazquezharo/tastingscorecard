@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, type Page } from "playwright";
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -60,10 +61,11 @@ const visible = async (p: Page, text: string) =>
     .waitFor({ timeout: 15000 });
 const button = (p: Page, name: string) =>
   p.getByRole("button", { name, exact: true });
-const roundShown = async (p: Page, r: number) => visible(p, `ROUND 0${r} ·`);
+const roundShown = async (p: Page, r: number) =>
+  p.locator(`.personal-round:nth-child(${r})`).waitFor();
 const revealed = async (p: Page, r: number) =>
   p
-    .locator(".wine-revealed h1")
+    .locator(`.personal-round:nth-child(${r}) .personal-answer strong`)
     .filter({ hasText: choices[r - 1] })
     .waitFor({ timeout: 15000 });
 const snapshot = async (p: Page, id: string) =>
@@ -95,6 +97,7 @@ try {
         await page.getByRole("group", { name: "Choose an emoji" }).count(),
         0,
       );
+      await openOptionalAvatar(page);
       await page.locator(".drawing-surface").scrollIntoViewIfNeeded();
       const box = (await page.locator(".drawing-surface").boundingBox())!;
       const touch = await contexts[1].newCDPSession(page);
@@ -115,6 +118,7 @@ try {
       assert.equal(await page.locator(".drawing-surface polyline").count(), 1);
       await button(page, "Undo").click();
       assert.equal(await page.locator(".drawing-surface polyline").count(), 0);
+      await openOptionalAvatar(page);
       await page.locator(".drawing-surface").scrollIntoViewIfNeeded();
       const redrawBox = (await page.locator(".drawing-surface").boundingBox())!;
       await page.mouse.move(redrawBox.x + 60, redrawBox.y + 60);
@@ -125,7 +129,10 @@ try {
     await page
       .getByLabel("Create a recovery PIN")
       .fill(i === 0 ? "4826" : "5731");
-    if (i === 1) await page.locator(".drawing-surface").click();
+    if (i === 1) {
+      await openOptionalAvatar(page);
+      await page.locator(".drawing-surface").click();
+    }
     await button(page, "Take my seat").click();
     await visible(page, "A good night awaits.");
     if (i === 0) {
@@ -141,6 +148,7 @@ try {
       await button(page, "Clear drawing").click();
       assert.equal(await page.locator(".drawing-surface polyline").count(), 0);
       await button(page, "Blue ink").click();
+      await openOptionalAvatar(page);
       await page.locator(".drawing-surface").scrollIntoViewIfNeeded();
       const box = (await page.locator(".drawing-surface").boundingBox())!;
       await page.mouse.move(box.x + 40, box.y + 100);
@@ -184,23 +192,16 @@ try {
   await visible(host, "Every guest has submitted a valid scorecard.");
   await button(host, "Lock submissions & open results").click();
   for (const page of guests) {
-    await visible(page, "THE GUESSES ARE IN");
+    await visible(page, "Final Scorecard");
     assert.equal(await page.locator(".round-card").count(), 0);
-    assert.equal(await page.locator(".guess-list > div").count(), 2);
+    assert.equal(await page.locator(".personal-round").count(), 8);
+    assert.equal(await page.locator(".personal-answer").count(), 0);
     assert.equal(
-      await page
-        .locator('.guess-list .avatar-icon polyline[stroke="#8cc7df"]')
-        .count(),
-      1,
+      await page.locator(".average, .guess-list, .leader-row").count(),
+      0,
     );
-    assert.equal(await page.locator(".wine-revealed").count(), 0);
-    assert.equal(await page.locator(".average").count(), 0);
-    assert.ok(
-      !(await page.locator("body").innerText()).includes(
-        "PRIVATE phone-only note",
-      ),
-    );
-    assert.equal(await button(page, "Round 2").count(), 0);
+    assert.equal(await page.locator(".personal-notes").count(), 1);
+    assert.equal(await page.locator(".event-line .avatar-icon").count(), 1);
   }
   const before = await snapshot(alice, id);
   assert.equal(before.results.length, 1);
@@ -250,33 +251,25 @@ try {
   await button(host, "Reveal wine 1").click();
   for (const page of guests) {
     await revealed(page, 1);
-    await visible(page, "St. Francis");
-    assert.equal(await page.locator(".guess-list .correct").count(), 2);
-    assert.equal(await page.locator(".average strong").innerText(), "7.0");
-    await visible(page, "2 submitted ratings");
+    assert.equal(await page.locator(".personal-answer").count(), 1);
+    assert.ok(
+      !(await page.locator("body").innerText()).includes("St. Francis"),
+    );
+    assert.equal(await page.locator(".average, .guess-list").count(), 0);
   }
   await button(host, "Show round 2 guesses").click();
-  for (const page of guests) await roundShown(page, 2);
-  await button(alice, "Round 1 ✓").click();
-  await revealed(alice, 1);
   await button(host, "Reveal wine 2").click();
-  await revealed(bob, 2);
-  await revealed(alice, 1);
-  await visible(alice, "Viewing round 1");
-  assert.equal(await button(alice, "Round 3").count(), 0);
+  for (const page of guests) await revealed(page, 2);
   const stage2 = await snapshot(bob, id);
   assert.equal(stage2.results.length, 2);
   assert.equal(JSON.stringify(stage2).includes("Kendall-Jackson"), false);
-  await button(alice, "Follow host").click();
-  await revealed(alice, 2);
   await button(host, "Show round 3 guesses").click();
-  for (const page of guests) await roundShown(page, 3);
   await Promise.all([host.reload(), alice.reload(), bob.reload()]);
   await button(host, "Reveal wine 3").waitFor();
   for (const page of guests) {
-    await roundShown(page, 3);
+    await visible(page, "Final Scorecard");
     assert.equal(await page.getByLabel("Your name").count(), 0);
-    assert.equal(await page.locator(".wine-revealed").count(), 0);
+    assert.equal(await page.locator(".personal-answer").count(), 2);
   }
   // Simulate a disconnected phone while the host advances, then recover saved state.
   await contexts[2].unrouteAll({ behavior: "ignoreErrors" });
@@ -311,6 +304,10 @@ try {
   await button(host, "Open final summary").click();
   mkdirSync("test-artifacts", { recursive: true });
   for (const [i, page] of guests.entries()) {
+    await visible(page, "Your taste, by the glass");
+    await page
+      .getByText("Final rankings & evening recap", { exact: true })
+      .click();
     await visible(page, "The leaderboard");
     assert.equal(await page.locator(".leader-row").count(), 2);
     assert.equal(
@@ -334,12 +331,10 @@ try {
       path: `test-artifacts/phone-only-final-${i}.png`,
       fullPage: true,
     });
-    await button(page, "Round 1 ✓").click();
-    await revealed(page, 1);
-    await button(page, "Follow host").click();
-    await visible(page, "The leaderboard");
     await page.reload();
-    await visible(page, "The leaderboard");
+    await visible(page, "Final Scorecard");
+    await revealed(page, 8);
+    await visible(page, "Your taste, by the glass");
   }
   await host.reload();
   await visible(host, "The leaderboard");
@@ -357,11 +352,11 @@ try {
         displayRequests,
         checks: [
           "host and two independent mobile guests",
-          "automatic scorecard-to-results transition",
+          "automatic read-only Final Scorecard transition",
           "guesses before identity/ratings",
           "server reveal permission and future-answer secrecy",
           "automatic reveal synchronization",
-          "browse previous rounds and Follow host",
+          "all saved rounds and progressively revealed personal answers",
           "partial-stage and final refresh recovery",
           "connection loss and recovery",
           "eight reveals without display",
@@ -369,7 +364,7 @@ try {
           "390/412px mobile layouts",
           "notes remain private",
           "touch and mouse avatar drawing, Undo/Clear, colors, edit/save and refresh",
-          "saved avatars on reveal and leaderboard",
+          "saved avatars on personal scorecard and leaderboard",
           "avatar update permission",
         ],
       },

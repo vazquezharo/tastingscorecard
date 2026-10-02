@@ -119,7 +119,9 @@ try {
     .getByRole("button", { name: "Reveal wine 1", exact: true })
     .click();
   await Promise.all([
-    guest.getByLabel("Round 1 reveal countdown").waitFor(),
+    guest
+      .getByRole("heading", { name: "Final Scorecard", exact: true })
+      .waitFor(),
     display.getByLabel("Round 1 reveal countdown").waitFor(),
   ]);
   const hidden = await (
@@ -127,14 +129,17 @@ try {
   ).json();
   assert.equal(hidden.results[0].wine, undefined);
   assert.equal(hidden.results[0].bottlePhoto, undefined);
+  await display.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
-    await guest
+    await display
       .locator(".reveal-countdown > strong")
       .evaluate((el) => getComputedStyle(el).animationName),
     "none",
   );
   await guest.reload();
-  await guest.getByAltText(`${choices[0]} bottle`, { exact: true }).waitFor();
+  await guest
+    .locator(".personal-round:nth-child(1) .personal-answer strong")
+    .waitFor();
   await display.getByAltText(`${choices[0]} bottle`, { exact: true }).waitFor();
   assert.equal(await display.locator(".taste-insights").count(), 0);
   for (let round = 2; round <= 8; round++) {
@@ -158,6 +163,14 @@ try {
       return original.call(this, text, ...args);
     };
   });
+  if (
+    !(await guest
+      .locator(".final-shared-results")
+      .evaluate((el) => (el as HTMLDetailsElement).open))
+  )
+    await guest
+      .getByText("Final rankings & evening recap", { exact: true })
+      .click();
   await guest.getByRole("button", { name: "Preview evening recap" }).click();
   await guest.getByRole("link", { name: "Download recap PNG" }).waitFor();
   const drawn = await guest.evaluate(() =>
@@ -175,6 +188,14 @@ try {
   assert.equal(metadata.width, 1080);
   assert.ok(metadata.height! > 1000);
   await guest.getByLabel("Include leaderboard and guest names").check();
+  if (
+    !(await guest
+      .locator(".final-shared-results")
+      .evaluate((el) => (el as HTMLDetailsElement).open))
+  )
+    await guest
+      .getByText("Final rankings & evening recap", { exact: true })
+      .click();
   await guest.getByRole("button", { name: "Preview evening recap" }).click();
   await guest.getByRole("link", { name: "Download recap PNG" }).waitFor();
   const included = await guest.evaluate(() =>

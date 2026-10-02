@@ -52,7 +52,19 @@ export const choices = [
   "Cabernet Sauvignon",
   "Merlot",
 ] as const;
+export function initials(name: string): string {
+  const words = name.trim().split(/\s+/u).filter(Boolean);
+  const first = (word: string | undefined) =>
+    Array.from(word || "")[0]?.toLocaleUpperCase() || "";
+  return (
+    (first(words[0]) + (words.length > 1 ? first(words.at(-1)) : "")).slice(
+      0,
+      4,
+    ) || "?"
+  );
+}
 export type Entry = {
+  enteredBy?: "host";
   guess: string;
   rating: number | null;
   notes: string;
@@ -242,4 +254,24 @@ export type PublicEvent = {
   };
   roster?: HostParticipant[];
   key?: string[];
+};
+
+/** Deliberately excludes all answer-key, reveal, producer, photo and note data. */
+export type AssistedEvent = {
+  id: string;
+  name: string;
+  phase: Event["phase"];
+  unlocked: number;
+  revision: number;
+  generation: number;
+  choices: string[];
+  guests: {
+    id: string;
+    name: string;
+    submitted: boolean;
+    valid: boolean;
+    missing: number[];
+    duplicates: number[][];
+    entries: Record<string, Omit<Entry, "notes">>;
+  }[];
 };

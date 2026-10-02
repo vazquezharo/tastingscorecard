@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, request } from "playwright";
 import assert from "node:assert/strict";
 import { choices } from "../src/shared.ts";
@@ -67,6 +68,7 @@ try {
   await original
     .getByLabel("Create a recovery PIN", { exact: true })
     .fill("4826");
+  await openOptionalAvatar(original);
   await original.locator(".drawing-surface").click();
   await original
     .getByRole("button", { name: "Take my seat", exact: true })

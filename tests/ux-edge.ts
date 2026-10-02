@@ -1,3 +1,4 @@
+import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, request } from "playwright";
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
@@ -49,6 +50,7 @@ try {
   await p.goto(`${origin}/e/${e.id}`);
   await p.getByLabel("Your name").fill("Storage guest");
   await p.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
+  await openOptionalAvatar(p);
   await p.locator(".drawing-surface").click();
   await p.getByRole("button", { name: "Take my seat", exact: true }).click();
   await p.locator("#guess-1").waitFor();

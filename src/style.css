@@ -2199,3 +2199,40 @@ h3,
 .taste-insights, .evening-recap { margin-block: 24px; overflow-wrap: anywhere; }
 .taste-insights .wine-row { flex-wrap: wrap; gap: 8px; }
 .recap-preview { display: block; width: 100%; max-width: 540px; height: auto; margin: 20px auto; border-radius: 8px; }
+
+/* Phase-one phone improvements; display styling remains unchanged. */
+.join-avatar > summary, .personal-notes > summary, .final-shared-results > summary {
+  min-height: 48px; display: flex; align-items: center; padding: 10px 0; cursor: pointer;
+}
+.initials-preview { display: flex; align-items: center; gap: 10px; }
+.initials-preview .avatar-icon { flex-shrink: 0; }
+.personal-rounds { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 16px; }
+.personal-round h2 { font-size: 1.35rem; margin-bottom: 16px; }
+.personal-round dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; margin: 0 0 12px; }
+.personal-round dt { color: var(--muted); font-size: .875rem; margin-bottom: 6px; }
+.personal-round dd { margin: 0; overflow-wrap: anywhere; }
+.personal-round .personal-answer { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 16px; }
+.personal-answer p { margin: 8px 0; }
+.personal-notes, .final-scorecard, .assisted-entry { overflow-wrap: anywhere; }
+.assisted-round { margin: 18px 0; }
+.assisted-round > .primary { width: 100%; margin-top: 14px; }
+.assisted-entry > .primary { width: 100%; }
+.assisted-entry select, .assisted-entry input { min-width: 0; }
+.roster > div { flex-wrap: wrap; }
+.assist-guest { font-size: .875rem; padding: 8px 12px; }
+@media (max-width: 600px) {
+  .join, .scorecard, .final-scorecard, .assisted-entry { min-width: 0; }
+  .scorecard .round-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .scorecard .round-nav button { min-width: 44px; min-height: 48px; width: auto; }
+  .scorecard .card-top { flex-wrap: wrap; gap: 8px; }
+  .scorecard .save-state { flex-basis: 100%; font-size: .875rem; }
+  .scorecard .rating-control { display: grid; grid-template-columns: 48px minmax(72px, 1fr) 48px auto; gap: 8px; }
+  .scorecard .rating-control input { width: 100%; min-width: 0; }
+  .scorecard .rating-control button { width: 48px; min-height: 48px; }
+  .scorecard .rating-presets button, .assisted-entry .rating-presets button { min-height: 48px; }
+  .scorecard .submission button, .scorecard .missing-rounds button { min-height: 48px; }
+  .scorecard select, .scorecard textarea, .join input { font-size: 16px; }
+  .personal-round { padding: 20px; }
+  .personal-round dl { grid-template-columns: minmax(0, 1fr); }
+  .final-shared-results .results-main { padding-inline: 0; }
+}

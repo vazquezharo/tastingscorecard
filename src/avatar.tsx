@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type PointerEvent } from "react";
-import { avatarColors, type AvatarDrawing } from "./shared";
+import { avatarColors, initials, type AvatarDrawing } from "./shared";
 
 export function Avatar({
   person,
@@ -18,7 +18,7 @@ export function Avatar({
       ) : person.avatar?.length ? (
         <Drawing drawing={person.avatar} />
       ) : (
-        person.emoji || person.name.slice(0, 1).toUpperCase()
+        person.emoji || initials(person.name)
       )}
     </span>
   );

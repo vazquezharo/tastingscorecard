@@ -1,3 +1,5 @@
+import { AssistedEntry } from "./assisted-entry";
+import { FinalScorecard } from "./final-scorecard";
 import {
   BottlePhotos,
   RevealCountdown,
@@ -213,10 +215,6 @@ function Join({
         onSubmit={async (e) => {
           e.preventDefault();
           setError("");
-          if (!returning && !avatar.length && !avatarPhoto) {
-            setError("Draw or upload an avatar before taking your seat.");
-            return;
-          }
           setBusy(true);
           try {
             onJoined(
@@ -263,10 +261,12 @@ function Join({
           another browser. Keep your PIN private.
         </p>
         {!returning && (
-          <section className="join-avatar" aria-labelledby="join-avatar-title">
-            <h2 id="join-avatar-title">Choose your avatar</h2>
+          <details className="join-avatar" aria-labelledby="join-avatar-title">
+            <summary id="join-avatar-title">Add an avatar (optional)</summary>
+            <h2>Make your seat your own</h2>
             <p className="small muted">
-              Draw an icon or upload a photo to take your seat.
+              Draw an icon or upload a photo, or skip this and use your
+              initials.
             </p>
             <PhotoPicker
               value={avatarPhoto}
@@ -284,14 +284,20 @@ function Join({
                 disabled={busy || photoBusy}
               />
             )}
-            <p id="avatar-required" className="small" role="status">
+            <p id="avatar-help" className="small" role="status">
               {avatarPhoto
                 ? "Your photo is ready."
                 : avatar.length
                   ? "Your drawing is ready."
-                  : "Draw or upload an avatar to take your seat."}
+                  : "No avatar selected. Your initials will be used."}
             </p>
-          </section>
+          </details>
+        )}
+        {!returning && !avatar.length && !avatarPhoto && (
+          <p className="initials-preview small">
+            <Avatar person={{ name: name.trim() || "Guest" }} /> Your initials
+            will be used. You can add an avatar later.
+          </p>
         )}
         <p className="small muted">
           {returning
@@ -301,10 +307,8 @@ function Join({
         {error && <ErrorBox message={error} />}
         <button
           className="primary"
-          disabled={
-            busy || photoBusy || (!returning && !avatar.length && !avatarPhoto)
-          }
-          aria-describedby={!returning ? "avatar-required" : undefined}
+          disabled={busy || photoBusy}
+          aria-describedby={!returning ? "avatar-help" : undefined}
         >
           {busy
             ? returning
@@ -1236,7 +1240,15 @@ function Guest({ id }: { id: string }) {
   }, [resultsOpen]);
   return (
     <>
-      <Header mode={resultsOpen ? "Tasting results" : "Guest scorecard"} />
+      <Header
+        mode={
+          resultsOpen && data?.me
+            ? "Final scorecard"
+            : resultsOpen
+              ? "Tasting results"
+              : "Guest scorecard"
+        }
+      />
       {error && (
         <div className="narrow">
           <ErrorBox
@@ -1278,6 +1290,19 @@ function Guest({ id }: { id: string }) {
             "Loading tasting…"
           )}
         </main>
+      ) : resultsOpen && data.me ? (
+        <>
+          <FinalScorecard event={data} />
+          {data.summary && (
+            <div className="narrow">
+              <TasteInsights event={data} />
+              <details className="final-shared-results">
+                <summary>Final rankings & evening recap</summary>
+                <Results event={{ ...data, me: undefined }} />
+              </details>
+            </div>
+          )}
+        </>
       ) : resultsOpen ? (
         <Results event={data} />
       ) : !data.me ? (
@@ -1757,7 +1782,9 @@ function WineListEditor({
       <p className="small muted">
         Customize the eight answer choices. Replace any wine with your own wine
         type and producer. This list is not the pouring order; assign rounds
-        below. Guests only see wine types until reveal.
+        below. Wine-type labels are public answer choices; keep exact bottle
+        names and producers in the Producer field. Guests only see wine types
+        until reveal.
       </p>
       {wines.map((wine, i) => (
         <div className="key-grid wine-edit-row" key={i}>
@@ -1885,6 +1912,12 @@ function HostGuestSheet({
           Repeated wine type in rounds {rounds.join(" & ")}.
         </p>
       ))}
+      <a
+        className="button"
+        href={link(`/host/assist/e/${event.id}?guest=${guest.id}`)}
+      >
+        Enter answers for {guest.name} · spoiler-minimized page
+      </a>
       <PinReset
         name={guest.name}
         participantId={guest.id}
@@ -2393,6 +2426,13 @@ function HostEvent({ id }: { id: string }) {
                         ? "Ready to submit"
                         : "Draft"}
                   </span>
+                  <a
+                    className="button assist-guest"
+                    aria-label={`Enter answers for ${p.name}`}
+                    href={link(`/host/assist/e/${id}?guest=${p.id}`)}
+                  >
+                    Assist
+                  </a>
                   <button
                     type="button"
                     className="remove-guest"
@@ -2446,6 +2486,14 @@ function HostEvent({ id }: { id: string }) {
 }
 function App() {
   let path = location.pathname.slice(base.length);
+  const assistedId = path.match(/^\/host\/assist\/e\/([a-f0-9]{32})\/?$/)?.[1];
+  if (assistedId)
+    return (
+      <>
+        <Header mode="Assisted entry" />
+        <AssistedEntry id={assistedId} />
+      </>
+    );
   if (path.startsWith("/host")) return <Host />;
   let id = path.match(/^\/projector\/e\/([a-f0-9]{32})\/?$/)?.[1];
   if (id) return <Projector id={id} />;
