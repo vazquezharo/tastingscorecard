@@ -18,6 +18,7 @@ import {
   validRating,
   timerRemaining,
   replayDemoId,
+  revealGuestDurationMs,
   type Event,
   type Participant,
 } from "../src/shared.js";
@@ -39,7 +40,8 @@ function newRevealStage(e: Event) {
   return {
     round: e.presenting,
     startsAt,
-    paradeEndsAt: startsAt + 800 + e.participants.length * 800,
+    paradeEndsAt:
+      startsAt + 800 + e.participants.length * revealGuestDurationMs,
   };
 }
 export function createApp(store?: Store) {

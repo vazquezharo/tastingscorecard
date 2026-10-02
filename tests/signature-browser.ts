@@ -165,7 +165,7 @@ try {
   assert.ok(!JSON.stringify(pending).includes("Fictional exact bottle"));
   assert.ok(!JSON.stringify(pending).includes("shop.example"));
   await expect(display.locator(".parade-card")).toHaveCount(11, {
-    timeout: 15000,
+    timeout: 25000,
   });
   assert.equal(await display.locator(".correct-mark").count(), 0);
   await expect(display.getByLabel("Round 1 reveal countdown")).toBeVisible();
@@ -181,7 +181,7 @@ try {
       await control("reveal", { staged: true, countdown: round === 4 });
       await expect(
         display.getByText(`Fictional exact bottle ${round}`, { exact: true }),
-      ).toBeVisible({ timeout: 18000 });
+      ).toBeVisible({ timeout: 30000 });
     }
     assert.equal((await get()).summary, undefined);
     assert.equal(await display.locator(".signature-final").count(), 0);

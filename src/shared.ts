@@ -1,4 +1,5 @@
 export const replayDemoId = "9681e53e9196cc78b882d0ccc9240e72";
+export const revealGuestDurationMs = 2000;
 export const avatarColors = [
   "#d6ad69",
   "#e9a0ad",

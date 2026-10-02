@@ -303,6 +303,10 @@ test("staged reveal persists and enforces secrecy through all eight rounds and e
     assert.equal((await control("lock", { override: true })).status, 200);
     const before = (await call(path, undefined, false)).body;
     assert.equal(before.parade.guesses.length, 3);
+    assert.equal(
+      before.revealStage.paradeEndsAt - before.revealStage.startsAt,
+      800 + 3 * 2000,
+    );
     assert.deepEqual(
       Object.keys(before.parade.guesses[0]).sort(),
       ["name", "emoji", "guess", "rating"].sort(),

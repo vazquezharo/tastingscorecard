@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "./avatar";
-import type { PublicEvent, WineResult } from "./shared";
+import {
+  revealGuestDurationMs,
+  type PublicEvent,
+  type WineResult,
+} from "./shared";
 import { eveningStats, wineRanks } from "./reveal-stats";
 
 export function BottleImage({ wine }: { wine: WineResult }) {
@@ -99,7 +103,7 @@ function StagedDisplay({ event }: { event: PublicEvent }) {
     ? guests.length
     : Math.min(
         guests.length,
-        Math.max(0, Math.floor((elapsed - 800) / 800) + 1),
+        Math.max(0, Math.floor((elapsed - 800) / revealGuestDurationMs) + 1),
       );
   const countdown =
     event.revealCountdown?.round === round ? event.revealCountdown : undefined;
