@@ -1528,18 +1528,6 @@ function EventDisplay({ id }: { id: string }) {
                 src={link(`/api/events/${id}/qr`)}
                 alt="QR code to join the tasting"
               />
-              <h2>Or scan to join</h2>
-              <p>
-                Open the group-chat invitation to join or ask your host to
-                recover your seat.
-              </p>
-              <a href={link(`/e/${id}`)}>
-                <span className="display-link-full">
-                  {location.host}
-                  {link(`/e/${id}`)}
-                </span>
-                <span className="display-link-short">Join tasting</span>
-              </a>
             </div>
           )}
           <RoundClock event={data} />
@@ -2358,20 +2346,13 @@ function HostEvent({ id }: { id: string }) {
               ))}
             </div>
           ) : (
-            <p className="muted">
-              Share the Guest App invitation; Event Display also offers an
-              optional QR code.
-            </p>
+            <p className="muted">No guests have joined yet.</p>
           )}
           <img
             className="host-qr"
             src={link(`/api/events/${id}/qr`)}
             alt="Guest join QR code"
           />
-          <p className="small muted">
-            Guest App and Event Display update automatically. Notes stay
-            private.
-          </p>
         </section>
       </div>
       {(data.phase === "locked" || data.phase === "summary") && (

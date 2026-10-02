@@ -261,11 +261,12 @@ export function TableDisplay({
             : "Find your seat"
           : `${ready} / ${guests.length} ready for round ${event.unlocked}`}
       </h2>
-      <p className="muted">
-        {event.phase === "setup"
-          ? "Open the tasting link from the group chat; QR is optional."
-          : "Ready = guess and rating saved. You can still edit until the host locks submissions."}
-      </p>
+      {event.phase !== "setup" && (
+        <p className="muted">
+          Ready = guess and rating saved. You can still edit until the host
+          locks submissions.
+        </p>
+      )}
       {event.seating && !readOnly && (
         <label className="display-layout-control">
           Display layout
