@@ -8,7 +8,7 @@ import { makeStore } from "../server/store.ts";
 import { publicEvent } from "../server/results.ts";
 import { producers } from "../server/wines.ts";
 import { libraryBottlePhoto } from "../server/bottle-library.ts";
-import { choices, type Event } from "../src/shared.ts";
+import { choices, type Event, type PublicEvent } from "../src/shared.ts";
 
 function fixture(): Event {
   return {
@@ -52,7 +52,9 @@ test("private bottle previews and final results agree for every rotated pouring 
     e.revealed = 8;
     e.unlocked = 8;
     for (const result of publicEvent(e).results) {
-      const bottle = host.hostBottles!.find((b) => b.type === result.wine)!;
+      const bottle: NonNullable<PublicEvent["hostBottles"]>[number] | undefined =
+        host.hostBottles!.find((b) => b.type === result.wine);
+      assert.ok(bottle);
       assert.equal(result.purchaseUrl, bottle.purchaseUrl);
       assert.equal(result.producer, producers[result.wine!]);
       assert.equal(result.wine, e.key[result.round - 1]);
