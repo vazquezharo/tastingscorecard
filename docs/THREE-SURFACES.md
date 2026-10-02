@@ -22,7 +22,7 @@ Locking shows submitted counts and incomplete/unsubmitted names before the actio
 
 ## Event Display
 
-Waiting: event name and Blind Wine Tasting identity, group-chat link instruction, registered guest names/avatars/initials, and an optional secondary QR. QR scanning is never required.
+Waiting: event name and Blind Wine Tasting identity, registered guest names/avatars/initials, and an optional secondary QR. The Event Display uses minimal visible text: no joining instructions or QR captions. QR scanning is never required.
 
 Tasting: Round X of 8, event name, optional saved timer, guest names/avatars, Ready/Waiting and current readiness count. It renders no guesses, ratings, correctness, scores, rankings, averages, producers, bottle images, purchase links, notes or tasting hints. The QR panel is omitted during tasting to prioritize the room information.
 
@@ -79,3 +79,5 @@ Rectangles put all seats on the two long sides, with no seats at the heads. With
 The approved walnut tabletop is generated artwork (`src/assets/walnut-tabletop.png`). Its desktop width is 25% smaller than the previous full-width table. Larger seat cards closely fill each long side. Each row scales its card, avatar and name sizes with the number of assigned guests on that side. Empty spots collapse on Event Display once guests have assigned seats; the saved seat numbers, underlying seating and physical sides remain unchanged. Unassigned guests remain visible separately. Smaller displays use a wider frame and shallower tabletop to preserve readability.
 
 TypeScript, production build and all 44 server/unit tests pass. The new `tests/dynamic-table-browser.ts` checks 4, 6, 8, 12 and 20 fictional guests at 1920×1080, 1280×720 and 1024×768: no overlap/overflow/head seats, dynamic size changes, safe removal, read-only requests and refresh. Existing host-tools rehearsal checks 20 long names with the timer visible at the same sizes. All 18 existing browser scripts and the three-surface rehearsal pass. Physical TV/phone/iPad testing remains outstanding.
+
+The Event Display omits instructional paragraphs during joining and tasting. Readiness is shown as a short count (for example, **5 / 8 Ready**). The optional timer shows its value and paused/expired state without the longer guest/host guidance. Guest App and Host Console instructions remain unchanged.

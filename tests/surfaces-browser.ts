@@ -64,9 +64,7 @@ try {
   await expect.poll(async () => (await read()).participants).toBe(1);
   const base = await read();
   await display.goto(origin + `/display/e/${id}`);
-  await display
-    .getByText("Open the tasting link from the group chat.", { exact: true })
-    .waitFor();
+  await display.locator(".qr-panel img").waitFor();
   await expect(display.locator("button, input, select, textarea")).toHaveCount(
     0,
   );
@@ -117,7 +115,7 @@ try {
     });
     assert.equal(res.status(), 200);
     await expect(display.locator(".table-display")).toContainText(
-      "1 / 1 ready",
+      "1 / 1 Ready",
     );
     const publicData = await (
       await dc.request.get(origin + path + "?view=projector", {

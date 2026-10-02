@@ -136,7 +136,7 @@ try {
     await display.goto(origin + href);
   }
   await display
-    .getByRole("heading", { name: "0 / 2 ready for round 1" })
+    .getByRole("heading", { name: "0 / 2 Ready" })
     .waitFor();
   for (const guest of guests) await guest.locator("#guess-1").waitFor();
   await guests[0].locator("#guess-1").selectOption(choices[0]);
@@ -146,7 +146,7 @@ try {
     .locator(".round-card:not([hidden]) .save-state.confirmed")
     .waitFor();
   await display
-    .getByRole("heading", { name: "1 / 2 ready for round 1" })
+    .getByRole("heading", { name: "1 / 2 Ready" })
     .waitFor();
   const pub = await (await dc.request.get(path + "?view=projector")).json();
   assert.deepEqual(
@@ -159,16 +159,16 @@ try {
   assert.equal(JSON.stringify(pub).includes("St. Francis"), false);
   await guests[0].locator("#guess-1").selectOption("");
   await display
-    .getByRole("heading", { name: "0 / 2 ready for round 1" })
+    .getByRole("heading", { name: "0 / 2 Ready" })
     .waitFor();
   await guests[1].locator("#guess-1").selectOption(choices[1]);
   await guests[1].getByRole("button", { name: "7.0", exact: true }).click();
   await display
-    .getByRole("heading", { name: "1 / 2 ready for round 1" })
+    .getByRole("heading", { name: "1 / 2 Ready" })
     .waitFor();
   await control("unlock");
   await display
-    .getByRole("heading", { name: "0 / 2 ready for round 2" })
+    .getByRole("heading", { name: "0 / 2 Ready" })
     .waitFor();
   for (const name of [
     "Casey",

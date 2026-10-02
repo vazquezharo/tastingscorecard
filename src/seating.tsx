@@ -259,9 +259,11 @@ export function TableDisplay({
           ? readOnly
             ? `${guests.length} guests joined`
             : "Find your seat"
-          : `${ready} / ${guests.length} ready for round ${event.unlocked}`}
+          : readOnly
+            ? `${ready} / ${guests.length} Ready`
+            : `${ready} / ${guests.length} ready for round ${event.unlocked}`}
       </h2>
-      {event.phase !== "setup" && (
+      {!readOnly && event.phase !== "setup" && (
         <p className="muted">
           Ready = guess and rating saved. You can still edit until the host
           locks submissions.

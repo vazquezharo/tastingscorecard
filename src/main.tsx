@@ -1516,11 +1516,6 @@ function EventDisplay({ id }: { id: string }) {
                 </>
               )}
             </h1>
-            <p className="muted">
-              {data.phase === "setup"
-                ? "Open the tasting link from the group chat."
-                : "Record your answers on your phone. Ready means saved; you can still edit."}
-            </p>
           </div>
           {data.phase === "setup" && (
             <div className="qr-panel">
@@ -1530,7 +1525,7 @@ function EventDisplay({ id }: { id: string }) {
               />
             </div>
           )}
-          <RoundClock event={data} />
+          <RoundClock event={data} minimal />
           <TableDisplay event={data} readOnly />
         </main>
       )}

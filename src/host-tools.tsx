@@ -6,7 +6,13 @@ export type HostControl = (
   extra?: Record<string, unknown>,
 ) => Promise<boolean>;
 
-export function RoundClock({ event }: { event: PublicEvent }) {
+export function RoundClock({
+  event,
+  minimal = false,
+}: {
+  event: PublicEvent;
+  minimal?: boolean;
+}) {
   const [now, setNow] = useState(Date.now());
   const offset = useRef(0);
   useEffect(() => {
@@ -31,11 +37,15 @@ export function RoundClock({ event }: { event: PublicEvent }) {
       <strong role="timer" aria-live="off">
         {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
       </strong>
-      <p role="status">
-        {seconds === 0
-          ? "Time’s up · you can still edit. Wait for your host."
-          : "A gentle guide · answers stay editable until the host locks."}
-      </p>
+      {(!minimal || seconds === 0) && (
+        <p role="status">
+          {minimal
+            ? "Time’s up"
+            : seconds === 0
+              ? "Time’s up · you can still edit. Wait for your host."
+              : "A gentle guide · answers stay editable until the host locks."}
+        </p>
+      )}
     </div>
   );
 }
