@@ -1505,8 +1505,7 @@ function EventDisplay({ id }: { id: string }) {
             <h1>
               {data.phase === "setup" ? (
                 <>
-                  Take your
-                  <br />
+                  Take your{" "}
                   <em>seat.</em>
                 </>
               ) : (
