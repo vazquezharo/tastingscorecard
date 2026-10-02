@@ -1,6 +1,99 @@
 import { useEffect, useRef, useState } from "react";
 import { timerRemaining, type PublicEvent } from "./shared";
 
+export function HostWineOptions({ event }: { event: PublicEvent }) {
+  return event.choices.map((type) => (
+    <option key={type} value={type}>
+      {event.hostBottles?.find((b) => b.type === type)?.name ?? type}
+    </option>
+  ));
+}
+
+export function HostBottlePreview({
+  event,
+  wine,
+}: {
+  event: PublicEvent;
+  wine: string;
+}) {
+  const bottle = event.hostBottles?.find((b) => b.type === wine);
+  const [failedUrl, setFailedUrl] = useState("");
+  if (!bottle) return null;
+  const failed = failedUrl === bottle.photoUrl;
+  return (
+    <div className="host-bottle-preview">
+      {bottle.photoUrl && !failed ? (
+        <img
+          src={bottle.photoUrl}
+          alt={`${bottle.name} bottle`}
+          onError={() => setFailedUrl(bottle.photoUrl!)}
+        />
+      ) : (
+        <span className="host-bottle-placeholder">
+          {failed ? "Photo could not load" : "No bottle photo"}
+        </span>
+      )}
+      <div>
+        <strong>{bottle.name}</strong>
+        <small>{wine}</small>
+        <p
+          className={
+            bottle.photoUrl && !failed && bottle.purchaseUrl
+              ? "small"
+              : "small warning"
+          }
+        >
+          {bottle.photoUrl && !failed ? "Photo ready" : "Photo needs attention"}
+          {" · "}
+          {bottle.purchaseUrl ? "Guest link ready" : "No matching guest link"}
+        </p>
+        {bottle.purchaseUrl && (
+          <a
+            href={bottle.purchaseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Check bottle link ↗
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function HostBottleMapping({ event }: { event: PublicEvent }) {
+  const ready =
+    event.hostBottles?.filter((b) => b.photoUrl && b.purchaseUrl).length ?? 0;
+  const types = event.key?.length === 8 ? event.key : event.choices;
+  return (
+    <section className="host-bottle-mapping">
+      <p className={ready === 8 ? "small" : "warning"} role="status">
+        {ready} of 8 wines have bottle photos and guest links configured. Photos
+        appear at reveal; guest links appear after Open final summary.
+      </p>
+      <details>
+        <summary>Check saved bottle mapping</summary>
+        <p className="small muted">
+          Private host preview. Match these bottles to the physical pouring
+          order.
+        </p>
+        <div className="key-grid">
+          {types.map((wine, i) => (
+            <div key={`${i}-${wine}`}>
+              <h3>
+                {event.key?.length === 8
+                  ? `Saved round ${i + 1}`
+                  : `Wine ${i + 1} · not assigned`}
+              </h3>
+              <HostBottlePreview event={event} wine={wine} />
+            </div>
+          ))}
+        </div>
+      </details>
+    </section>
+  );
+}
+
 export type HostControl = (
   action: string,
   extra?: Record<string, unknown>,
@@ -166,20 +259,23 @@ export function PouringCorrection({
       <fieldset disabled={disabled}>
         <div className="key-grid">
           {key.map((wine, i) => (
-            <label key={i}>
-              Corrected round {i + 1}
-              <select
-                aria-label={`Corrected round ${i + 1}`}
-                value={wine}
-                onChange={(e) =>
-                  setKey((p) => p.map((w, j) => (j === i ? e.target.value : w)))
-                }
-              >
-                {event.choices.map((w) => (
-                  <option key={w}>{w}</option>
-                ))}
-              </select>
-            </label>
+            <div key={i}>
+              <label>
+                Corrected round {i + 1}
+                <select
+                  aria-label={`Corrected round ${i + 1}`}
+                  value={wine}
+                  onChange={(e) =>
+                    setKey((p) =>
+                      p.map((w, j) => (j === i ? e.target.value : w)),
+                    )
+                  }
+                >
+                  <HostWineOptions event={event} />
+                </select>
+              </label>
+              <HostBottlePreview event={event} wine={wine} />
+            </div>
           ))}
         </div>
         {changed && (

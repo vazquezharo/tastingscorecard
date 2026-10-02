@@ -236,6 +236,13 @@ export type WineResult = {
   count?: number;
 };
 export type PublicEvent = {
+  // Authenticated Host Console only; omitted from guest/display projections.
+  hostBottles?: {
+    type: string;
+    name: string;
+    photoUrl?: string;
+    purchaseUrl?: string;
+  }[];
   revealCountdown?: RevealCountdown;
   revealStage?: RevealStage;
   parade?: { round: number; guesses: ParadeGuess[] };

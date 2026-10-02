@@ -3723,3 +3723,51 @@ h3,
     padding-block: 6px;
   }
 }
+
+/* Private bottle verification follows the same server mapping as guest results. */
+.host-bottle-preview {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 8px 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.host-bottle-preview img {
+  width: 72px;
+  height: 112px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 6px;
+}
+.host-bottle-preview strong,
+.host-bottle-preview small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.host-bottle-preview small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+.host-bottle-preview p {
+  margin: 8px 0;
+}
+.host-bottle-preview a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.host-bottle-placeholder {
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+.host-bottle-mapping {
+  margin: 16px 0 24px;
+}
+.host-bottle-mapping summary {
+  min-height: 48px;
+  cursor: pointer;
+}

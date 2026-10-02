@@ -30,6 +30,24 @@ const purchaseLinks: Record<string, string> = {
     "https://www.totalwine.com/wine/red-wine/merlot/kendall-jackson-merlot/p/2400750",
 };
 
+// Private bottle names from the supplied retailer links; not public answer choices.
+const bottleNames: Record<string, string> = {
+  "Pinot Noir": "St. Francis Pinot Noir · Sonoma County",
+  Grenache: "Halos de Jupiter Grenache",
+  "Rosso di Montepulciano": "Redi Rosso di Montepulciano",
+  Malbec: "Ed Edmundo Malbec",
+  "Chianti Classico": "Cantalici Chianti Classico Baruffo",
+  Tempranillo: "Uro Toro La Enfermera Tempranillo",
+  "Cabernet Sauvignon": "J. Lohr Estates Seven Oaks Cabernet Sauvignon",
+  Merlot: "Kendall-Jackson Vintner’s Reserve Merlot",
+};
+
+export function bottleName(type: string, producer: string) {
+  return Object.hasOwn(producers, type) && producer === producers[type]
+    ? bottleNames[type]
+    : `${producer} · ${type}`;
+}
+
 export function purchaseLink(type: string, producer: string) {
   return Object.hasOwn(producers, type) && producer === producers[type]
     ? purchaseLinks[type]

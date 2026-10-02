@@ -21,6 +21,9 @@ import {
 } from "./storage";
 import {
   RoundClock,
+  HostWineOptions,
+  HostBottlePreview,
+  HostBottleMapping,
   TimerControls,
   PouringCorrection,
   CorrectionHistory,
@@ -2457,6 +2460,7 @@ function HostEvent({ id }: { id: string }) {
           Initial wine configuration and corrective tools. Live rounds, guests
           and table controls are above.
         </p>
+        <HostBottleMapping event={data} />
         {data.phase === "setup" && (
           <>
             <BottlePhotos
@@ -2482,24 +2486,25 @@ function HostEvent({ id }: { id: string }) {
             </p>
             <div className="key-grid">
               {Array.from({ length: 8 }, (_, i) => (
-                <label key={i}>
-                  Round {i + 1}
-                  <select
-                    aria-label={`Answer for round ${i + 1}`}
-                    disabled={busy || !!error}
-                    value={key[i]}
-                    onChange={(e) =>
-                      setKey((p) =>
-                        p.map((v, j) => (i === j ? e.target.value : v)),
-                      )
-                    }
-                  >
-                    <option value="">Assign wine type</option>
-                    {data.choices.map((w) => (
-                      <option key={w}>{w}</option>
-                    ))}
-                  </select>
-                </label>
+                <div key={i}>
+                  <label>
+                    Round {i + 1}
+                    <select
+                      aria-label={`Answer for round ${i + 1}`}
+                      disabled={busy || !!error}
+                      value={key[i]}
+                      onChange={(e) =>
+                        setKey((p) =>
+                          p.map((v, j) => (i === j ? e.target.value : v)),
+                        )
+                      }
+                    >
+                      <option value="">Assign wine type</option>
+                      <HostWineOptions event={data} />
+                    </select>
+                  </label>
+                  <HostBottlePreview event={data} wine={key[i]} />
+                </div>
               ))}
             </div>
             <p id="key-help" className="small muted" role="status">

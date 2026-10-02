@@ -1,4 +1,5 @@
 import { normalizeBottlePhoto } from "./bottle-photo.js";
+import { bottleDetails } from "./bottle-details.js";
 import { libraryBottlePhoto } from "./bottle-library.js";
 import { normalizeAvatarPhoto } from "./avatar-photo.js";
 import { ownsSeat } from "./identity.js";
@@ -225,6 +226,24 @@ export function createApp(store?: Store) {
       ),
     );
   });
+  app.get(
+    base + "/api/events/:id/host-bottle-photo/:choice",
+    host,
+    async (req, res) => {
+      const e = await event(req);
+      const index = Number(req.params.choice);
+      const types = eventChoices(e);
+      assert(
+        Number.isInteger(index) && index >= 0 && index < types.length,
+        404,
+        "Photo not available.",
+      );
+      const bottle = bottleDetails(e, types[index]);
+      const photo = libraryBottlePhoto(bottle.type, bottle.producer);
+      assert(photo, 404, "Photo not available.");
+      res.type(photo.mime).send(photo.bytes);
+    },
+  );
   app.get(base + "/api/events/:id/bottle-photo/:round", async (req, res) => {
     const round = Number(req.params.round);
     assert(

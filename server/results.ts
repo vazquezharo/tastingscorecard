@@ -1,5 +1,6 @@
 import { tonightBottle } from "./tonight-bottles.js";
-import { hasLibraryBottle, libraryPhotoUrl } from "./bottle-library.js";
+import { bottleDetails, hostBottles } from "./bottle-details.js";
+import { libraryPhotoUrl } from "./bottle-library.js";
 import { ownsSeat } from "./identity.js";
 import {
   eventChoices,
@@ -11,7 +12,7 @@ import {
   type PublicEvent,
   type WineResult,
 } from "../src/shared.js";
-import { producers, purchaseLink } from "./wines.js";
+import { producers } from "./wines.js";
 function producerFor(e: Event, type: string) {
   return (
     e.wines?.find((w) => w.type === type)?.producer ?? producers[type] ?? ""
@@ -43,12 +44,10 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
     distribution[guess] = (distribution[guess] || 0) + 1;
   }
   const bottle = reveal ? tonightBottle(e, r) : undefined;
+  const details = reveal ? bottleDetails(e, e.key[r - 1]) : undefined;
   const retailerUrl =
     reveal && e.phase === "summary" && e.revealed === 8
-      ? purchaseLink(
-          e.key[r - 1],
-          bottle?.producer ?? producerFor(e, e.key[r - 1]),
-        )
+      ? details?.purchaseUrl
       : undefined;
   return {
     round: r,
@@ -75,16 +74,10 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
     ...(reveal
       ? {
           wine: e.key[r - 1],
-          producer: bottle?.producer ?? producerFor(e, e.key[r - 1]),
+          producer: details!.producer,
           bottlePhoto:
-            bottle?.image ??
-            e.bottlePhotos?.[e.key[r - 1]] ??
-            (hasLibraryBottle(
-              e.key[r - 1],
-              bottle?.producer ?? producerFor(e, e.key[r - 1]),
-            )
-              ? libraryPhotoUrl(e.id, r)
-              : undefined),
+            details!.image ??
+            (details!.library ? libraryPhotoUrl(e.id, r) : undefined),
           ...(bottle?.purchaseUrl || retailerUrl
             ? { purchaseUrl: bottle?.purchaseUrl ?? retailerUrl }
             : {}),
@@ -186,6 +179,7 @@ export function publicEvent(
         expiresAt: r.expiresAt,
       }));
     out.bottlePhotos = e.bottlePhotos;
+    out.hostBottles = hostBottles(e);
     out.wines =
       e.wines ??
       eventChoices(e).map((type) => ({
