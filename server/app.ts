@@ -17,6 +17,7 @@ import {
   validation,
   validRating,
   timerRemaining,
+  replayDemoId,
   type Event,
   type Participant,
 } from "../src/shared.js";
@@ -1054,6 +1055,27 @@ export function createApp(store?: Store) {
           "Reveal all eight wines first.",
         );
         e.phase = "summary";
+      } else if (action === "replayDemo") {
+        assert(
+          e.id === replayDemoId,
+          403,
+          "Replay is only available for the fictional demo.",
+        );
+        assert(
+          e.phase === "summary" && e.revealed === 8,
+          409,
+          "Finish the demo before replaying its final reveal.",
+        );
+        assert(
+          req.body.confirm === e.name,
+          400,
+          "Confirm the demo name before replaying.",
+        );
+        e.phase = "locked";
+        e.revealed = 7;
+        e.presenting = 8;
+        delete e.revealCountdown;
+        e.revealStage = newRevealStage(e);
       } else if (action === "remove") {
         const index = e.participants.findIndex(
           (p) => p.id === req.body.participantId,

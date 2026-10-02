@@ -32,7 +32,7 @@ test("host-supplied retailer links appear only after the full tasting and match 
   );
 });
 import { tonight, tonightBottle } from "../server/tonight-bottles.ts";
-import { choices, type Event } from "../src/shared.ts";
+import { choices, replayDemoId, type Event } from "../src/shared.ts";
 import { eveningStats, wineRanks } from "../src/reveal-stats.ts";
 
 test("Drive bottle photos are server-gated by reveal state, countdown and producer without modifying events", async () => {
@@ -144,6 +144,68 @@ function fixture(): Event {
     })),
   };
 }
+test("only the host can replay the designated demo without changing its saved scorecards", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "demo-replay-"));
+  process.env.SQLITE_PATH = join(dir, "events.sqlite");
+  process.env.HOST_PASSWORD = "local-demo-test";
+  process.env.SESSION_SECRET =
+    "local-demo-test-secret-more-than-thirty-two-characters";
+  const store = makeStore();
+  const demo = {
+    ...fixture(),
+    id: replayDemoId,
+    phase: "summary" as const,
+    unlocked: 8,
+    revealed: 8,
+    presenting: 8,
+  };
+  await store.create(demo);
+  const other = { ...demo, id: "a".repeat(32) };
+  await store.create(other);
+  const server = createApp(store).listen(0, "127.0.0.1");
+  await new Promise<void>((r) => server.once("listening", r));
+  const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const login = await fetch(origin + "/api/host/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: process.env.HOST_PASSWORD }),
+  });
+  const cookie = login.headers.get("set-cookie")!.split(";")[0];
+  const control = (
+    id: string,
+    host: boolean,
+    revision = 0,
+    confirm = demo.name,
+  ) =>
+    fetch(`${origin}/api/events/${id}/control`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(host ? { Cookie: cookie } : {}),
+      },
+      body: JSON.stringify({ action: "replayDemo", revision, confirm }),
+    });
+  try {
+    assert.equal((await control(demo.id, false)).status, 401);
+    assert.equal((await control(other.id, true)).status, 403);
+    assert.equal((await control(demo.id, true, 0, "wrong")).status, 400);
+    assert.equal((await control(demo.id, true)).status, 200);
+    const after = (await store.get(demo.id))!;
+    assert.equal(after.phase, "locked");
+    assert.equal(after.presenting, 8);
+    assert.equal(after.revealed, 7);
+    assert.deepEqual(after.participants, demo.participants);
+    assert.deepEqual(after.key, demo.key);
+    assert.equal(after.generation, demo.generation);
+    assert.equal(publicEvent(after).results.length, 8);
+    assert.equal(publicEvent(after).results[7].wine, undefined);
+    assert.deepEqual(await store.get(other.id), other);
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+    await store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 test("tonight bottle configuration is event/order specific and rejects unsafe direct links", () => {
   const e = fixture();
   const config = {

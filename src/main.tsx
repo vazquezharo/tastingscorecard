@@ -38,6 +38,7 @@ import {
   conflicts,
   validation,
   validRating,
+  replayDemoId,
   type AvatarDrawing,
   type Entry,
   type PublicEvent,
@@ -2254,7 +2255,25 @@ function HostEvent({ id }: { id: string }) {
               )}
             </>
           ) : (
-            <p>Results are saved. The event link stays open for revisits.</p>
+            <>
+              <p>Results are saved. The event link stays open for revisits.</p>
+              {data.id === replayDemoId && (
+                <button
+                  className="primary"
+                  disabled={busy || !!error}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Replay the demo’s final wine reveal? Guests, scorecards, notes and seating stay saved.",
+                      )
+                    )
+                      void control("replayDemo", { confirm: data.name });
+                  }}
+                >
+                  Replay final reveal
+                </button>
+              )}
+            </>
           )}
         </section>
         <section className="panel host-secondary-panel">
