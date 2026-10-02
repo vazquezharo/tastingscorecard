@@ -301,31 +301,13 @@ export function TableDisplay({
             )}
             <div
               className="table-surface"
+              aria-hidden="true"
               style={
                 event.seating.shape === "rectangle"
                   ? { backgroundImage: `url(${walnutTabletop})` }
                   : undefined
               }
-            >
-              <span>
-                {event.phase === "setup"
-                  ? "The tasting table"
-                  : `Round ${event.unlocked}`}
-              </span>
-              {compact && (
-                <small>
-                  {event.seating.shape === "round"
-                    ? "Round"
-                    : event.seating.shape === "square"
-                      ? "Square"
-                      : "Rectangular"}{" "}
-                  table ·{" "}
-                  {event.seating.shape === "rectangle"
-                    ? "seats on long sides only"
-                    : "numbered clockwise from the top"}
-                </small>
-              )}
-            </div>
+            />
             {event.seating.shape === "rectangle" ? (
               <div
                 className="table-side table-side-bottom"
