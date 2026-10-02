@@ -114,9 +114,23 @@ export function timerRemaining(timer: RoundTimer, now: number) {
     timer.endsAt === undefined ? timer.remainingMs : timer.endsAt - now,
   );
 }
-export type RevealCountdown = { round: number; endsAt: number };
+export type RevealCountdown = {
+  round: number;
+  endsAt: number;
+  startsAt?: number;
+};
+export type RevealStage = {
+  round: number;
+  startsAt: number;
+  paradeEndsAt: number;
+};
+export type ParadeGuess = Pick<
+  WineResult["guesses"][number],
+  "name" | "emoji" | "avatar" | "avatarPhoto" | "guess" | "rating"
+>;
 export type Event = {
   revealCountdown?: RevealCountdown;
+  revealStage?: RevealStage;
   bottlePhotos?: Record<string, string>;
   keyCorrections?: KeyCorrection[];
   roundTimer?: RoundTimer;
@@ -190,6 +204,7 @@ export type WineResult = {
   wine?: string;
   producer?: string;
   bottlePhoto?: string;
+  purchaseUrl?: string;
   distribution: Record<string, number>;
   guesses: {
     name: string;
@@ -206,6 +221,8 @@ export type WineResult = {
 };
 export type PublicEvent = {
   revealCountdown?: RevealCountdown;
+  revealStage?: RevealStage;
+  parade?: { round: number; guesses: ParadeGuess[] };
   bottlePhotos?: Record<string, string>;
   keyCorrections?: KeyCorrection[];
   roundTimer?: RoundTimer;

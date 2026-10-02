@@ -1,7 +1,7 @@
 # The Blind Tasting: Purpose and Expected Behavior
 
 Updated: October 2, 2026  
-Current behavioral specification, updated for phase one: spoiler protection, optional avatars, phone usability, a personal Final Scorecard, and host-assisted entry. Existing countdowns, insights, and recap remain supported.
+Current behavioral specification, including the staged end-of-tasting reveal, final Event Display, optional avatars, personal Final Scorecard, and host-assisted entry.
 
 - App: https://tasting.haroldvazquez.com
 - Host: https://tasting.haroldvazquez.com/host
@@ -138,7 +138,7 @@ Locking stops scorecard and avatar edits on the server and automatically moves r
 
 ## 10. Reveals
 
-Locking opens round 1’s guess breakdown without its wine identity or ratings. The host then:
+Locking opens round 1’s saved guess parade without its wine identity or correctness. The display receives final saved guesses and ratings through a separate restricted parade payload only after lock. The host then:
 
 1. Reveals that wine.
 2. Opens the next round’s guesses.
@@ -146,13 +146,15 @@ Locking opens round 1’s guess breakdown without its wine identity or ratings. 
 4. Repeats through all eight rounds.
 5. Explicitly opens the final summary.
 
-The host can choose an immediate reveal or an optional three-second countdown. The countdown’s saved server deadline survives refresh. Wine identity, producer, bottle photo, correctness, and ratings are withheld from guest/display responses until that deadline. Next-round and summary controls cannot bypass it.
+The host can choose an immediate reveal or an optional three-second countdown. The countdown’s saved server deadline survives refresh. Wine identity, producer, bottle photo, correctness, purchase links and group averages are withheld from guest/display responses until that deadline. Final saved guesses and ratings are already allowed in the post-lock parade. Next-round and summary controls cannot bypass it.
 
 Reduced-motion preferences disable countdown animation. Polling and network delays can affect when each screen sees the countdown or confirmed reveal. The app waits for confirmed reveal data instead of guessing the answer locally.
 
 Revealed results show wine identity, producer, optional photo, guesses, correctness, individual ratings, eligible group average, and rating count.
 
-The display and host retain the existing reveal presentation. Guest phones primarily show their personal Final Scorecard rather than the presentation, adding revealed answers and correctness progressively. Unrevealed rounds never show answer/correctness, producers, photos, group averages, or rankings. After final summary opens, personal insights appear and guests can expand **Final rankings & evening recap**. Anonymous event viewers retain the existing public opened-results view. Refresh/recovery restores the saved stage and personal scorecard.
+The read-only Event Display uses a server-persisted round intro/parade timeline: guests appear at 0.8-second intervals, stay visible, and the selected optional countdown begins after the parade. Refresh joins the saved timeline. The host queues each reveal and controls every next round. Legacy rounds without a timeline show their cards immediately. After server-confirmed reveal, the bottle is the centerpiece, with exact identity, eligible average/count, and gentle correct-guess checkmarks. The display sends no event-control requests. Guest phones primarily show their personal Final Scorecard, adding revealed answers, producer, bottle photo/fallback, eligible group average/count and an exact supplied HTTPS retailer link progressively. Unrevealed rounds never show answer/correctness, producers, photos, purchase URLs, group averages, or rankings. After final summary opens, personal insights appear and guests can expand **Final rankings & evening recap**. Anonymous event viewers retain the existing public opened-results view. Refresh/recovery restores the saved stage and personal scorecard.
+
+The host must explicitly open Final Summary after reveal 8. Until then the public API provides no overall leaderboard or cumulative score. The final display shows all tied champions, all tied eligible group favorites, all eight ranked wines, and reliable secondary evening stats. Wine ranks retain unrounded-average competition ties; unrated wines have no rank. Small displays use compact layouts for many ties, with secondary stats omitted when they would crowd the core results.
 
 ## 11. Scoring and Wine Rankings
 
@@ -189,6 +191,10 @@ The host can remove a guest after confirming the guest’s name. Removal deletes
 
 After locking, the host can download CSV containing saved scorecards, notes, submission/completeness flags, and the answer key. It may include identities that guests have not yet seen, so it is a private host export.
 
+### Tonight-specific bottles
+
+`server/tonight-bottles.ts` is a server-only, one-evening configuration. Its default is inactive: no event ID or exact bottle data was supplied with this request. Eight bottle entries must match the configured event ID and its entire saved pouring order. A different event or changed order gets no overlay. Missing photos use a generic fallback; missing links are omitted. No retailer searches or guessed URLs are generated. No new bottle-management UI or database migration is introduced. The existing optional host photo tool remains available.
+
 ### Host-assisted entry
 
 The authenticated host chooses a registered guest on a separate, spoiler-minimized page. The page’s restricted API never returns the key, correctness, producers, bottle photos, purchase links, reveal results, group averages, rankings, or private notes. It shows only guest names, saved guesses/ratings, revisions, submission validity, and unlocked-round information.
@@ -210,7 +216,7 @@ The host can review and submit a complete assisted scorecard using the same eigh
 
 ## 15. Verification and Practical Limits
 
-The current build passed 34 server/unit tests, feature browser rehearsals, and a full eight-round event using independent mobile browser sessions without a display. Live read-only checks confirmed PostgreSQL health, mobile host/summary rendering, recap generation, and preservation of the existing eight-guest demo.
+The staged reveal build passed 37 server/unit tests, feature browser rehearsals, and a full eight-round event using independent mobile browser sessions without a display. Live read-only checks confirmed PostgreSQL health, mobile host/summary rendering, recap generation, and preservation of the existing eight-guest demo.
 
 Physical iPhone/Android/TV testing, actual camera/file picking, in-app browser downloads, and a full room of simultaneous production users remain unverified. Automated accessibility checks passed for tested screens, but do not establish comprehensive accessibility certification.
 

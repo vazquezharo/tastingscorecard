@@ -10,7 +10,7 @@ assert.ok(
   "Audit must never mutate production",
 );
 const mode = process.env.AUDIT_MODE || "before";
-const folder = `docs/ux-audit/${mode}`;
+const folder = `test-artifacts/ux-audit/${mode}`;
 mkdirSync(folder, { recursive: true });
 const browser = await chromium.launch({
   executablePath: "/usr/bin/chromium",
@@ -246,26 +246,29 @@ try {
   await host.setViewportSize({ width: 1280, height: 900 });
   await host.getByLabel("Lock anyway.", { exact: false }).check();
   await button(host, "Lock submissions & open results").click();
-  await visible(guest, "THE GUESSES ARE IN");
+  await visible(guest, "Final Scorecard");
   await capture(guest, "locked-guesses-phone");
   await display.goto(`${origin}/projector/e/${id}`);
   for (let r = 1; r <= 8; r++) {
     await button(host, `Reveal wine ${r}`).click();
     await guest
-      .locator(".wine-revealed h1")
+      .locator(`.personal-round:nth-child(${r}) .personal-answer strong`)
       .filter({ hasText: choices[r - 1] })
       .waitFor();
     if (r === 1) {
       await capture(guest, "revealed-phone");
-      await display.locator(".wine-revealed h1").waitFor();
+      await display.locator(".signature-identity h2").waitFor();
       await capture(display, "revealed-display");
     }
     if (r < 8) {
       await button(host, `Show round ${r + 1} guesses`).click();
-      await visible(guest, `ROUND 0${r + 1}`);
+      await visible(display, `Wine ${r + 1}`);
     }
   }
   await button(host, "Open final summary").click();
+  await guest
+    .getByText("Final rankings & evening recap", { exact: true })
+    .click();
   await visible(guest, "The leaderboard");
   await capture(guest, "summary-phone");
   await capture(host, "summary-host-desktop");

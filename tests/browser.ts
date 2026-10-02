@@ -293,7 +293,7 @@ try {
   await host
     .getByRole("button", { name: "Lock submissions & open results" })
     .click();
-  await waitText(projector, "THE GUESSES ARE IN");
+  await waitText(projector, "Wine 1");
   await waitText(guest, "Final Scorecard");
   assert.equal(await guest.locator("#guess-1").count(), 0);
   assert.ok(
@@ -309,7 +309,7 @@ try {
       .getByRole("button", { name: `Reveal wine ${r}`, exact: true })
       .click();
     await projector
-      .locator(".wine-revealed h1")
+      .locator(".signature-identity h2")
       .filter({ hasText: key[r - 1] })
       .waitFor();
     await guest
@@ -332,22 +332,20 @@ try {
           exact: true,
         })
         .click();
-      await waitText(projector, `ROUND 0${r + 1}`);
+      await waitText(projector, `Wine ${r + 1}`);
     }
   }
   await host.getByRole("button", { name: "Open final summary" }).click();
-  await waitText(projector, "The leaderboard");
+  await waitText(projector, "TASTING CHAMPION");
   await guest
     .getByText("Final rankings & evening recap", { exact: true })
     .click();
   await waitText(guest, "The leaderboard");
   assert.ok(
-    (await projector.locator(".leader-row").first().innerText()).includes("8"),
+    (await projector.locator(".champion").first().innerText()).includes("8"),
   );
   assert.ok(
-    (await projector.locator("body").innerText()).includes(
-      "Incomplete scorecard",
-    ),
+    (await host.locator("body").innerText()).includes("Incomplete scorecard"),
   );
   await noOverflow(guest);
   await noOverflow(other);
@@ -362,7 +360,7 @@ try {
   const download = await downloadPromise;
   await download.saveAs("test-artifacts/results.csv");
   await projector.reload();
-  await waitText(projector, "The leaderboard");
+  await waitText(projector, "TASTING CHAMPION");
   await projector.screenshot({
     path: "test-artifacts/projector-summary.png",
     fullPage: true,

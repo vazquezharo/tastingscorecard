@@ -1,3 +1,4 @@
+import { tonightBottle } from "./tonight-bottles.js";
 import { ownsSeat } from "./identity.js";
 import {
   eventChoices,
@@ -40,6 +41,7 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
     const guess = p.entries[r]?.guess || "No guess";
     distribution[guess] = (distribution[guess] || 0) + 1;
   }
+  const bottle = reveal ? tonightBottle(e, r) : undefined;
   return {
     round: r,
     distribution,
@@ -65,8 +67,9 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
     ...(reveal
       ? {
           wine: e.key[r - 1],
-          producer: producerFor(e, e.key[r - 1]),
-          bottlePhoto: e.bottlePhotos?.[e.key[r - 1]],
+          producer: bottle?.producer ?? producerFor(e, e.key[r - 1]),
+          bottlePhoto: bottle?.image ?? e.bottlePhotos?.[e.key[r - 1]],
+          ...(bottle?.purchaseUrl ? { purchaseUrl: bottle.purchaseUrl } : {}),
           count: eligible.length,
           average: eligible.length ? total / 10 / eligible.length : null,
         }
@@ -88,6 +91,7 @@ export function publicEvent(
     : e.revealed;
   const out: PublicEvent = {
     revealCountdown: pending,
+    revealStage: e.phase === "locked" ? e.revealStage : undefined,
     id: e.id,
     serverTime: now,
     roundTimer: e.phase === "tasting" ? e.roundTimer : undefined,
@@ -173,6 +177,21 @@ export function publicEvent(
       ).reduce<number>((a, b) => a + b, 0),
       ...validation(p.entries, eventChoices(e)),
     }));
+  }
+  if (e.phase === "locked" && e.presenting > revealed) {
+    out.parade = {
+      round: e.presenting,
+      guesses: e.participants.map((p) => ({
+        name: p.name,
+        emoji: p.emoji,
+        avatar: p.avatar,
+        avatarPhoto: p.avatarPhoto,
+        guess: p.entries[e.presenting]?.guess || "No guess",
+        rating: validRating(p.entries[e.presenting]?.rating)
+          ? p.entries[e.presenting].rating
+          : null,
+      })),
+    };
   }
   if (e.phase === "locked" || e.phase === "summary") {
     out.results = Array.from({ length: revealed }, (_, i) =>

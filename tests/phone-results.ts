@@ -253,7 +253,9 @@ try {
     await revealed(page, 1);
     assert.equal(await page.locator(".personal-answer").count(), 1);
     assert.ok(
-      !(await page.locator("body").innerText()).includes("St. Francis"),
+      (await page.locator(".personal-round").first().innerText()).includes(
+        "St. Francis",
+      ),
     );
     assert.equal(await page.locator(".average, .guess-list").count(), 0);
   }

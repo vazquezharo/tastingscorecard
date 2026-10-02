@@ -132,7 +132,7 @@ try {
   await display.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
     await display
-      .locator(".reveal-countdown > strong")
+      .locator(".signature-status")
       .evaluate((el) => getComputedStyle(el).animationName),
     "none",
   );
@@ -140,7 +140,7 @@ try {
   await guest
     .locator(".personal-round:nth-child(1) .personal-answer strong")
     .waitFor();
-  await display.getByAltText(`${choices[0]} bottle`, { exact: true }).waitFor();
+  await display.locator(".signature-identity .signature-bottle").waitFor();
   assert.equal(await display.locator(".taste-insights").count(), 0);
   for (let round = 2; round <= 8; round++) {
     await control("next");

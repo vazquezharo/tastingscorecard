@@ -1,3 +1,4 @@
+import { BottleImage, RetailerLink } from "./reveal-display";
 import { Avatar } from "./avatar";
 import { validation, validRating, type PublicEvent } from "./shared";
 
@@ -69,14 +70,21 @@ export function FinalScorecard({ event }: { event: PublicEvent }) {
               {revealed ? (
                 <div className="personal-answer">
                   <span className="eyebrow">REVEALED ANSWER</span>
+                  <BottleImage wine={revealed} />
                   <p>
                     <strong>{revealed.wine}</strong>
+                  </p>
+                  <p>{revealed.producer}</p>
+                  <p className="small">
+                    Group average: {revealed.average?.toFixed(1) ?? "—"} / 10 ·{" "}
+                    {revealed.count ?? 0} eligible ratings
                   </p>
                   <p className="small">
                     {mine?.correct
                       ? "Correct guess ✓"
                       : "No point for this guess"}
                   </p>
+                  <RetailerLink wine={revealed} />
                 </div>
               ) : (
                 <p className="small muted unrevealed-answer">

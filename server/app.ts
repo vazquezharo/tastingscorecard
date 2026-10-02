@@ -32,6 +32,14 @@ class HttpError extends Error {
 function assert(ok: unknown, status: number, message: string): asserts ok {
   if (!ok) throw new HttpError(status, message);
 }
+function newRevealStage(e: Event) {
+  const startsAt = Date.now();
+  return {
+    round: e.presenting,
+    startsAt,
+    paradeEndsAt: startsAt + 800 + e.participants.length * 800,
+  };
+}
 export function createApp(store?: Store) {
   const app = express();
   const password = process.env.HOST_PASSWORD,
@@ -893,6 +901,7 @@ export function createApp(store?: Store) {
         delete e.roundTimer;
         e.phase = "locked";
         e.presenting = 1;
+        e.revealStage = newRevealStage(e);
       } else if (action === "reveal") {
         assert(
           e.phase === "locked" &&
@@ -907,9 +916,19 @@ export function createApp(store?: Store) {
           400,
           "Choose whether to use a countdown.",
         );
+        assert(
+          req.body.staged === undefined || typeof req.body.staged === "boolean",
+          400,
+          "Choose staged reveal timing.",
+        );
+        const startsAt =
+          req.body.staged === true
+            ? Math.max(Date.now(), e.revealStage?.paradeEndsAt ?? 0)
+            : Date.now();
         e.revealed++;
-        if (req.body.countdown === true)
-          e.revealCountdown = { round: e.revealed, endsAt: Date.now() + 3000 };
+        const endsAt = startsAt + (req.body.countdown === true ? 3000 : 0);
+        if (endsAt > Date.now())
+          e.revealCountdown = { round: e.revealed, startsAt, endsAt };
         else delete e.revealCountdown;
       } else if (action === "next") {
         assert(
@@ -923,6 +942,7 @@ export function createApp(store?: Store) {
           "Reveal this round first.",
         );
         e.presenting++;
+        e.revealStage = newRevealStage(e);
       } else if (action === "summary") {
         assert(
           !e.revealCountdown || e.revealCountdown.endsAt <= Date.now(),
@@ -963,6 +983,7 @@ export function createApp(store?: Store) {
         );
         delete e.roundTimer;
         delete e.revealCountdown;
+        delete e.revealStage;
         e.generation = (e.generation ?? 0) + 1;
         e.phase = "setup";
         e.key = [];

@@ -1,3 +1,4 @@
+import { RevealDisplay } from "./reveal-display";
 import { AssistedEntry } from "./assisted-entry";
 import { FinalScorecard } from "./final-scorecard";
 import {
@@ -1553,7 +1554,7 @@ function Results({
 function Projector({ id }: { id: string }) {
   const { data, error } = useEvent(id, false, true);
   return (
-    <div className="projector">
+    <div className={`projector${data?.phase === "locked" || data?.phase === "summary" ? " signature-projector" : ""}`}>
       <Header mode="At the table" />
       {error && (
         <div className="narrow">
@@ -1565,7 +1566,7 @@ function Projector({ id }: { id: string }) {
       {!data ? (
         <main>Loading…</main>
       ) : data.phase === "locked" || data.phase === "summary" ? (
-        <Results event={data} projector />
+        <RevealDisplay event={data} />
       ) : (
         <main className="projector-lobby seating-lobby">
           <div>
@@ -2319,7 +2320,10 @@ function HostEvent({ id }: { id: string }) {
                     className="primary"
                     disabled={busy || !!error}
                     onClick={() =>
-                      void control("reveal", { countdown: theatrical })
+                      void control("reveal", {
+                        countdown: theatrical,
+                        staged: true,
+                      })
                     }
                   >
                     Reveal wine {data.presenting}

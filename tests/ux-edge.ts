@@ -1,8 +1,9 @@
 import { openOptionalAvatar } from "./browser-helpers";
 import { chromium, request } from "playwright";
 import assert from "node:assert/strict";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { choices } from "../src/shared.ts";
+mkdirSync("test-artifacts/ux-edge", { recursive: true });
 const origin = process.env.TEST_URL || "http://127.0.0.1:3010";
 assert.ok(["localhost", "127.0.0.1"].includes(new URL(origin).hostname));
 const api = await request.newContext({
@@ -56,7 +57,7 @@ try {
   await p.locator("#guess-1").waitFor();
   assert.match(await p.locator("body").innerText(), /storage/i);
   await p.screenshot({
-    path: "docs/ux-audit/after/storage-unavailable.png",
+    path: "test-artifacts/ux-edge/storage-unavailable.png",
     fullPage: true,
   });
   await p.setViewportSize({ width: 320, height: 720 });
@@ -78,7 +79,7 @@ try {
     10,
   );
   await p.screenshot({
-    path: "docs/ux-audit/after/scorecard-text-200-percent.png",
+    path: "test-artifacts/ux-edge/scorecard-text-200-percent.png",
     fullPage: true,
   });
   await p.evaluate(() => (document.documentElement.style.fontSize = ""));
@@ -123,7 +124,7 @@ try {
     .click();
   await p.getByText("Private unsaved edge note", { exact: true }).waitFor();
   await p.screenshot({
-    path: "docs/ux-audit/after/locked-private-draft.png",
+    path: "test-artifacts/ux-edge/locked-private-draft.png",
     fullPage: true,
   });
   const publicEvent = await (await api.get(`/api/events/${e.id}`)).json();
@@ -169,7 +170,7 @@ try {
       )?.disabled,
   );
   await host.screenshot({
-    path: "docs/ux-audit/after/host-session-recovered.png",
+    path: "test-artifacts/ux-edge/host-session-recovered.png",
     fullPage: true,
   });
   await host.goto(origin + "/host");
@@ -195,7 +196,7 @@ try {
   console.log({ pageErrors: errors });
   assert.equal(errors.length, 0);
   writeFileSync(
-    "docs/ux-audit/after/edge-report.json",
+    "test-artifacts/ux-edge/edge-report.json",
     JSON.stringify(
       {
         blockedStorageJoin: true,
