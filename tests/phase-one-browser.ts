@@ -1,3 +1,4 @@
+import { approveSeatRecovery } from "./browser-helpers";
 import { chromium, type Page } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
@@ -105,7 +106,6 @@ try {
   await host.goto(origin + `/host/e/${event.id}`);
   await guest.goto(origin + `/e/${event.id}`);
   await guest.getByLabel("Your name").fill("Riley Torres");
-  await guest.getByLabel("Create a recovery PIN").fill("4826");
   assert.equal(
     await guest
       .getByRole("button", { name: "Take my seat", exact: true })
@@ -136,18 +136,20 @@ try {
   const secondToken = randomUUID();
   const joined = await recoveredContext.request.post(origin + path + "/join", {
     headers: { "X-Guest-Token": secondToken },
-    data: { name: "Morgan Reed", pin: "5731" },
+    data: { name: "Morgan Reed" },
   });
   const second = (await joined.json()).me;
   await recovered.goto(origin + `/e/${event.id}`);
   await recovered
     .getByRole("button", { name: "Recover my seat", exact: true })
     .click();
-  await recovered.getByLabel("Your name").fill("Riley Torres");
-  await recovered.getByLabel("Your recovery PIN").fill("4826");
-  await recovered
-    .getByRole("button", { name: "Recover scorecard", exact: true })
-    .click();
+  await approveSeatRecovery(
+    recovered,
+    hostContext.request,
+    origin,
+    event.id,
+    "Riley Torres",
+  );
   await visible(recovered, "A good night awaits.");
   const assistedRequests: string[] = [];
   const assistedPayloads: any[] = [];
@@ -447,7 +449,7 @@ try {
       event: event.id,
       checks: [
         "optional initials join",
-        "refresh and PIN recovery",
+        "refresh and host-approved recovery",
         "320/375/390/412px and 200% text",
         "44px touch targets",
         "guest autosave offline retry",

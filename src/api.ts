@@ -1,11 +1,13 @@
 import { readLocal, writeLocal } from "./storage";
 export const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+let tabToken: string | undefined;
 export function browserToken() {
-  let token = readLocal("tasting.identity.v1");
+  let token = readLocal("tasting.identity.v1") || tabToken;
   if (!token) {
     token = crypto.randomUUID();
     writeLocal("tasting.identity.v1", token);
   }
+  tabToken = token;
   return token;
 }
 export class ApiError extends Error {

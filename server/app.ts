@@ -1,6 +1,6 @@
 import { normalizeBottlePhoto } from "./bottle-photo.js";
 import { normalizeAvatarPhoto } from "./avatar-photo.js";
-import { ownsSeat, validPin, pinHash, verifyPin } from "./identity.js";
+import { ownsSeat } from "./identity.js";
 import { validAvatar } from "../src/shared.js";
 import express from "express";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
@@ -245,13 +245,6 @@ export function createApp(store?: Store) {
   app.post(base + "/api/events/:id/join", joinLimiter, async (req, res) => {
     const token = tokenHash(req);
     assert(token, 400, "A valid browser identity token is required.");
-    const pin = req.body.pin;
-    assert(
-      pin === undefined || validPin(pin),
-      400,
-      "Choose a PIN with 4–6 digits.",
-    );
-    const recoveryHash = pin === undefined ? undefined : await pinHash(pin);
     const avatarPhoto = await normalizeAvatarPhoto(req.body.avatarPhoto).catch(
       () => {
         throw new HttpError(
@@ -306,113 +299,218 @@ export function createApp(store?: Store) {
         avatarPhoto,
         tokenHash: token,
         draftScope: true,
-        recoveryHash,
         entries: {},
         submitted: false,
       });
     });
     res.json(publicEvent(await event(req), token));
   });
-  const recoveryLimiter = rateLimit({
+  const recoveryRoomLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 20,
-    keyGenerator: (req) =>
-      `${ipKeyGenerator(req.ip || "")}:${id(req)}:${hash(
-        String(req.body?.name || "")
-          .trim()
-          .toLocaleLowerCase(),
-      )}`,
+    limit: 150,
+    keyGenerator: (req) => `${ipKeyGenerator(req.ip || "")}:${id(req)}`,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
-      error: "Too many recovery attempts. Wait 15 minutes and try again.",
+      error:
+        "Too many recovery attempts for this event. Ask your host for help or wait 15 minutes.",
     },
   });
+  const recoveryLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    keyGenerator: (req) =>
+      `${ipKeyGenerator(req.ip || "")}:${id(req)}:${tokenHash(req) || "anonymous"}`,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      error:
+        "Too many recovery attempts. Wait 15 minutes or ask your host for help.",
+    },
+  });
+  // Recovery credentials stay in the event's private persisted state. GETs never grant access.
+  const attachSession = (e: Event, participantId: string, token: string) => {
+    const seat = e.participants.find((p) => p.id === participantId);
+    assert(seat, 404, "This guest is no longer at the table.");
+    assert(
+      !e.participants.some((p) => p.id !== seat.id && ownsSeat(p, token)),
+      409,
+      "This browser already belongs to another guest. Use a separate browser or private tab.",
+    );
+    if (!ownsSeat(seat, token))
+      seat.tokenAliases = [...(seat.tokenAliases || []), token];
+  };
+  const pruneRecovery = (e: Event) => {
+    const now = Date.now();
+    e.recoveryRequests = (e.recoveryRequests || []).filter(
+      (r) =>
+        r.expiresAt > now &&
+        e.participants.some((p) => p.id === r.participantId),
+    );
+    e.recoveryLinks = (e.recoveryLinks || []).filter(
+      (r) =>
+        r.expiresAt > now &&
+        e.participants.some((p) => p.id === r.participantId),
+    );
+  };
   app.post(
     base + "/api/events/:id/recover",
+    recoveryRoomLimiter,
     recoveryLimiter,
     async (req, res) => {
       const token = tokenHash(req);
       assert(token, 400, "A valid browser identity token is required.");
-      const { name, pin } = req.body;
       assert(
-        typeof name === "string" && name.trim().length <= 40 && validPin(pin),
+        typeof req.body.participantId === "string",
         400,
-        "Enter your display name and 4–6 digit PIN.",
+        "Choose your existing seat. Your host must approve recovery.",
       );
-      const e = await event(req);
-      const p = e.participants.find(
-        (p) => p.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase(),
-      );
-      assert(
-        !p?.recoveryBlockedUntil || p.recoveryBlockedUntil <= Date.now(),
-        429,
-        "Too many recovery attempts for this seat. Wait 15 minutes and try again.",
-      );
-      const encoded =
-        p?.recoveryHash || "00000000000000000000000000000000:" + "0".repeat(64);
-      const verified = await verifyPin(pin, encoded);
-      if (p?.recoveryHash && !verified)
-        await db!.mutate(id(req), (current) => {
-          const seat = current.participants.find((s) => s.id === p.id);
-          if (!seat || seat.recoveryHash !== encoded) return;
-          if (
-            seat.recoveryBlockedUntil &&
-            seat.recoveryBlockedUntil <= Date.now()
-          ) {
-            seat.recoveryFailures = 0;
-            seat.recoveryBlockedUntil = undefined;
-          }
-          seat.recoveryFailures = (seat.recoveryFailures || 0) + 1;
-          if (seat.recoveryFailures >= 10)
-            seat.recoveryBlockedUntil = Date.now() + 15 * 60 * 1000;
-        });
-      assert(
-        p?.recoveryHash && verified,
-        401,
-        "Name or PIN not recognized. Use the name you joined with. Older seats need a PIN set in their original browser.",
-      );
-      await db!.mutate(id(req), (current) => {
-        const seat = current.participants.find((s) => s.id === p.id);
+      const result = await db!.mutate(id(req), (e) => {
+        pruneRecovery(e);
+        const seat = e.participants.find(
+          (p) => p.id === req.body.participantId,
+        );
+        assert(seat, 404, "This guest is no longer at the table.");
         assert(
-          seat && seat.recoveryHash === encoded,
+          !e.participants.some((p) => ownsSeat(p, token)),
           409,
-          "Your PIN changed. Try again.",
+          "This browser already has a seat. Reopen the event or use a separate browser.",
+        );
+        const existing = e.recoveryRequests!.find(
+          (r) => r.tokenHash === token && r.status === "pending",
         );
         assert(
-          !seat.recoveryBlockedUntil || seat.recoveryBlockedUntil <= Date.now(),
+          !existing || existing.participantId === seat.id,
+          409,
+          "You already have a pending request. Wait for your host to respond.",
+        );
+        if (existing)
+          return { status: existing.status, expiresAt: existing.expiresAt };
+        assert(
+          e.recoveryRequests!.filter((r) => r.status === "pending").length <
+            100,
           429,
-          "Too many recovery attempts for this seat. Wait 15 minutes and try again.",
+          "Too many pending requests. Ask your host for a recovery link.",
+        );
+        const request = {
+          id: randomBytes(16).toString("hex"),
+          participantId: seat.id,
+          tokenHash: token,
+          status: "pending" as const,
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 15 * 60 * 1000,
+        };
+        e.recoveryRequests!.push(request);
+        return { status: request.status, expiresAt: request.expiresAt };
+      });
+      res.json(result);
+    },
+  );
+  app.get(base + "/api/events/:id/recovery", async (req, res) => {
+    const token = tokenHash(req);
+    assert(token, 401, "A valid browser identity token is required.");
+    const e = await event(req);
+    const request = e.recoveryRequests
+      ?.filter((r) => r.tokenHash === token)
+      .at(-1);
+    const seat =
+      request && e.participants.find((p) => p.id === request.participantId);
+    const status = !request
+      ? "none"
+      : !seat || request.expiresAt <= Date.now()
+        ? "expired"
+        : request.status;
+    res.json({
+      status,
+      name: seat?.name,
+      participantId: seat?.id,
+      expiresAt: request?.expiresAt,
+    });
+  });
+  app.post(
+    base + "/api/events/:id/recovery/:requestId",
+    host,
+    async (req, res) => {
+      assert(
+        ["approve", "deny"].includes(req.body.decision),
+        400,
+        "Choose Approve or Deny.",
+      );
+      await db!.mutate(id(req), (e) => {
+        const request = e.recoveryRequests?.find(
+          (r) => r.id === req.params.requestId,
         );
         assert(
-          !current.participants.some(
-            (s) => s.id !== seat.id && ownsSeat(s, token),
-          ),
-          409,
-          "This browser already belongs to another guest. Use a separate browser or private tab.",
+          request && request.expiresAt > Date.now(),
+          410,
+          "This recovery request has expired.",
         );
-        seat.recoveryFailures = 0;
-        seat.recoveryBlockedUntil = undefined;
-        if (!ownsSeat(seat, token))
-          seat.tokenAliases = [...(seat.tokenAliases || []), token].slice(-5);
+        assert(
+          request.status === "pending",
+          409,
+          "This request has already been answered.",
+        );
+        if (req.body.decision === "approve")
+          attachSession(e, request.participantId, request.tokenHash);
+        request.status =
+          req.body.decision === "approve" ? "approved" : "denied";
+      });
+      res.json(publicEvent(await event(req), undefined, true));
+    },
+  );
+  app.post(base + "/api/events/:id/recovery-link", host, async (req, res) => {
+    const secret = randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + 10 * 60 * 1000;
+    await db!.mutate(id(req), (e) => {
+      pruneRecovery(e);
+      const seat = e.participants.find((p) => p.id === req.body.participantId);
+      assert(seat, 404, "This guest is no longer at the table.");
+      // A new link replaces unused links for this seat, without revoking authenticated sessions.
+      e.recoveryLinks = e.recoveryLinks!.filter(
+        (r) => r.participantId !== seat.id,
+      );
+      e.recoveryLinks.push({
+        participantId: seat.id,
+        secretHash: hash(secret),
+        expiresAt,
+      });
+    });
+    res.json({ path: `${base}/e/${id(req)}#recover=${secret}`, expiresAt });
+  });
+  app.post(
+    base + "/api/events/:id/recovery-link/redeem",
+    recoveryRoomLimiter,
+    recoveryLimiter,
+    async (req, res) => {
+      const token = tokenHash(req);
+      assert(token, 400, "A valid browser identity token is required.");
+      assert(
+        typeof req.body.secret === "string" &&
+          /^[a-f0-9]{64}$/.test(req.body.secret),
+        400,
+        "This recovery link is invalid.",
+      );
+      await db!.mutate(id(req), (e) => {
+        const index = e.recoveryLinks?.findIndex(
+          (r) => r.secretHash === hash(req.body.secret),
+        );
+        assert(
+          index !== undefined && index >= 0,
+          410,
+          "This recovery link has expired or was already used. Ask your host for a new link.",
+        );
+        const recovery = e.recoveryLinks![index];
+        assert(
+          recovery.expiresAt > Date.now(),
+          410,
+          "This recovery link has expired. Ask your host for a new link.",
+        );
+        attachSession(e, recovery.participantId, token);
+        e.recoveryLinks!.splice(index, 1);
       });
       res.json(publicEvent(await event(req), token));
     },
   );
-  app.put(base + "/api/events/:id/pin", async (req, res) => {
-    const token = tokenHash(req);
-    assert(token, 401, "Join or recover your seat first.");
-    assert(validPin(req.body.pin), 400, "Choose a PIN with 4–6 digits.");
-    const recoveryHash = await pinHash(req.body.pin);
-    await db!.mutate(id(req), (e) => {
-      const p = e.participants.find((p) => ownsSeat(p, token));
-      assert(p, 401, "Join or recover your seat first.");
-      p.recoveryHash = recoveryHash;
-      p.recoveryFailures = 0;
-      p.recoveryBlockedUntil = undefined;
-    });
-    res.json(publicEvent(await event(req), token));
-  });
   app.put(base + "/api/events/:id/avatar", async (req, res) => {
     const token = tokenHash(req);
     assert(token, 401, "Join this event first.");
@@ -664,11 +762,6 @@ export function createApp(store?: Store) {
     res.json(publicEvent(await event(req), undefined, true));
   });
   app.post(base + "/api/events/:id/control", host, async (req, res) => {
-    let replacementPinHash: string | undefined;
-    if (req.body.action === "resetPin") {
-      assert(validPin(req.body.pin), 400, "Choose a new PIN with 4–6 digits.");
-      replacementPinHash = await pinHash(req.body.pin);
-    }
     await db!.mutate(id(req), (e) => {
       assert(
         req.body.revision === (e.controlRevision ?? 0),
@@ -719,17 +812,6 @@ export function createApp(store?: Store) {
           reason: reason.trim(),
         });
         e.key = [...key];
-      } else if (action === "resetPin") {
-        const p = e.participants.find((p) => p.id === req.body.participantId);
-        assert(p, 404, "This guest is no longer at the table.");
-        assert(
-          req.body.confirm === p.name && req.body.identityConfirmed === true,
-          400,
-          "Confirm this guest’s identity and exact name before resetting their PIN.",
-        );
-        p.recoveryHash = replacementPinHash!;
-        p.recoveryFailures = 0;
-        p.recoveryBlockedUntil = undefined;
       } else if (
         ["timerStart", "timerPause", "timerResume", "timerStop"].includes(
           action,
@@ -970,6 +1052,12 @@ export function createApp(store?: Store) {
             seat === req.body.participantId ? null : seat,
           );
         e.participants.splice(index, 1);
+        e.recoveryRequests = e.recoveryRequests?.filter(
+          (r) => r.participantId !== req.body.participantId,
+        );
+        e.recoveryLinks = e.recoveryLinks?.filter(
+          (r) => r.participantId !== req.body.participantId,
+        );
       } else if (action === "reset") {
         assert(
           req.body.confirm === e.name,

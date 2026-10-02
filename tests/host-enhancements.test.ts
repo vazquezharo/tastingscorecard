@@ -9,7 +9,7 @@ import { makeStore } from "../server/store.ts";
 import { publicEvent } from "../server/results.ts";
 import { choices, timerRemaining } from "../src/shared.ts";
 
-test("host corrections, PIN assistance and timers preserve scorecards and secrecy", async (t) => {
+test("host corrections, seat recovery and timers preserve scorecards and secrecy", async (t) => {
   const dir = mkdtempSync(join(tmpdir(), "host-tools-test-"));
   process.env.SQLITE_PATH = join(dir, "test.sqlite");
   process.env.HOST_PASSWORD = "host-tools-test-password";
@@ -65,7 +65,6 @@ test("host corrections, PIN assistance and timers preserve scorecards and secrec
       "POST",
       {
         name: "Alex",
-        pin: "4826",
         avatar: [{ color: "#d6ad69", points: [[10, 10]] }],
       },
       token,
@@ -157,64 +156,54 @@ test("host corrections, PIN assistance and timers preserve scorecards and secrec
       },
     );
     await t.test(
-      "host-assisted PIN reset clears lockout but preserves identity and all data",
+      "host recovery links preserve identity and existing sessions",
       async () => {
-        await call(
-          path + "/recover",
-          "POST",
-          { name: "Alex", pin: "4826" },
-          recoveredToken,
-        );
-        await store.mutate(id, (e) => {
-          e.participants[0].recoveryFailures = 10;
-          e.participants[0].recoveryBlockedUntil = Date.now() + 900000;
-        });
-        const input = {
-          participantId,
-          confirm: "Alex",
-          identityConfirmed: true,
-          pin: "7531",
-        };
-        await control("resetPin", input, 401, false);
-        await control("resetPin", { ...input, pin: "bad" }, 400);
-        await control("resetPin", { ...input, confirm: "Blair" }, 400);
-        await control("resetPin", { ...input, identityConfirmed: false }, 400);
-        await control("resetPin", { ...input, revision: -1 }, 409);
-        await control("resetPin", { ...input, participantId: "unknown" }, 404);
         const before = (await store.get(id))!.participants[0];
-        const response = await control("resetPin", input);
-        const after = (await store.get(id))!.participants[0];
-        assert.deepEqual(after.entries, before.entries);
-        assert.equal(after.id, before.id);
-        assert.equal(after.submitted, before.submitted);
-        assert.deepEqual(after.avatar, before.avatar);
-        assert.equal(after.tokenHash, before.tokenHash);
-        assert.deepEqual(after.tokenAliases, before.tokenAliases);
-        assert.equal(after.recoveryBlockedUntil, undefined);
-        assert.equal(after.recoveryFailures, 0);
-        assert.notEqual(after.recoveryHash, before.recoveryHash);
-        assert.ok(!JSON.stringify(response).includes("7531"));
-        assert.ok(!JSON.stringify(response).includes(after.recoveryHash!));
         assert.equal(
           (
             await call(
-              path + "/recover",
+              path + "/recovery-link",
               "POST",
-              { name: "Alex", pin: "4826" },
-              randomUUID(),
+              { participantId },
+              token,
             )
           ).status,
           401,
         );
-        const recovered = await call(
-          path + "/recover",
+        const response = await call(
+          path + "/recovery-link",
           "POST",
-          { name: "Alex", pin: "7531" },
-          randomUUID(),
+          { participantId },
+          undefined,
+          true,
         );
-        assert.equal(recovered.status, 200);
+        assert.equal(response.status, 200);
+        const secret = response.body.path.split("#recover=")[1];
+        assert.equal(
+          (
+            await call(
+              path + "/recovery-link/redeem",
+              "POST",
+              { secret },
+              recoveredToken,
+            )
+          ).status,
+          200,
+        );
+        const recovered = await call(path, "GET", undefined, recoveredToken);
         assert.equal(recovered.body.me.id, participantId);
         assert.deepEqual(recovered.body.me.entries, before.entries);
+        assert.equal(
+          (
+            await call(
+              path + "/recovery-link/redeem",
+              "POST",
+              { secret },
+              randomUUID(),
+            )
+          ).status,
+          410,
+        );
         for (const guest of [token, recoveredToken])
           assert.equal(
             (await call(path, "GET", undefined, guest)).body.me.id,
@@ -298,12 +287,18 @@ test("host corrections, PIN assistance and timers preserve scorecards and secrec
         await control("lock", { override: true });
         assert.equal((await call(path)).body.roundTimer, undefined);
         await control("timerStart", { seconds: 30 }, 423);
-        await control("resetPin", {
-          participantId,
-          confirm: "Alex",
-          identityConfirmed: true,
-          pin: "1357",
-        });
+        assert.equal(
+          (
+            await call(
+              path + "/recovery-link",
+              "POST",
+              { participantId },
+              undefined,
+              true,
+            )
+          ).status,
+          200,
+        );
         assert.equal((await call(path)).body.phase, "locked");
         await control("correctKey", {
           key: [...choices],

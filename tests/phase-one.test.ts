@@ -96,7 +96,7 @@ test("phase-one security, optional avatars and assisted entry preserve existing 
         const joined = await call(
           path + "/join",
           "POST",
-          { name: "Alex Chen", pin: "4826" },
+          { name: "Alex Chen" },
           false,
           guestToken,
         );
@@ -639,12 +639,32 @@ test("phase-one security, optional avatars and assisted entry preserve existing 
       },
     );
     await t.test(
-      "refresh, PIN recovery, SQLite restart and unrelated legacy event preservation",
+      "refresh, host-approved recovery, SQLite restart and unrelated legacy event preservation",
       async () => {
-        const recovered = await call(
+        await call(
           path + "/recover",
           "POST",
-          { name: "Alex Chen", pin: "4826" },
+          { participantId: guestId },
+          false,
+          recoveryToken,
+        );
+        const request = (await call(path + "?host=1", "GET", undefined, true))
+          .body.recoveryRequests[0];
+        assert.equal(
+          (
+            await call(
+              path + `/recovery/${request.id}`,
+              "POST",
+              { decision: "approve" },
+              true,
+            )
+          ).status,
+          200,
+        );
+        const recovered = await call(
+          path,
+          "GET",
+          undefined,
           false,
           recoveryToken,
         );

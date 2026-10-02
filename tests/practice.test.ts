@@ -62,7 +62,6 @@ test("practice saves privately, survives restart/recovery, and never affects sco
       "POST",
       {
         name: "Alex",
-        pin: "4826",
         avatar: [{ color: "#d6ad69", points: [[10, 10]] }],
       },
       token,
@@ -125,12 +124,30 @@ test("practice saves privately, survives restart/recovery, and never affects sco
     server = createApp(store).listen(0, "127.0.0.1");
     await new Promise<void>((r) => server.once("listening", r));
     origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-    const recovered = await call(
+    const seat = (await call(path, "GET", undefined, token)).body.me.id;
+    const recoveryToken = randomUUID();
+    await call(
       path + "/recover",
       "POST",
-      { name: "Alex", pin: "4826" },
-      randomUUID(),
+      { participantId: seat },
+      recoveryToken,
     );
+    const request = (
+      await call(path + "?host=1", "GET", undefined, undefined, true)
+    ).body.recoveryRequests[0];
+    assert.equal(
+      (
+        await call(
+          path + `/recovery/${request.id}`,
+          "POST",
+          { decision: "approve" },
+          undefined,
+          true,
+        )
+      ).status,
+      200,
+    );
+    const recovered = await call(path, "GET", undefined, recoveryToken);
     assert.equal(recovered.status, 200);
     assert.equal(recovered.body.me.practice.notes, answer.notes);
     async function control(action: string, extra = {}) {

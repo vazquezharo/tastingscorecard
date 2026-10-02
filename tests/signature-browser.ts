@@ -72,7 +72,7 @@ try {
     tokens.push(token);
     const res = await dc.request.post(origin + path + "/join", {
       headers: { "X-Guest-Token": token },
-      data: { name: `Guest ${String(i + 1).padStart(2, "0")}`, pin: "4826" },
+      data: { name: `Guest ${String(i + 1).padStart(2, "0")}` },
     });
     assert.equal(res.status(), 200);
   }
@@ -96,7 +96,6 @@ try {
     if (await p.getByText("Recover my seat", { exact: true }).count()) {
       await p.getByText("Recover my seat", { exact: true }).click();
       await p.getByLabel("Name used to join", { exact: true }).fill(n);
-      await p.getByLabel("Recovery PIN", { exact: true }).fill("4826");
       await p
         .getByRole("button", { name: "Recover my scorecard", exact: true })
         .click();

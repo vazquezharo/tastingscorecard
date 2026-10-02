@@ -94,7 +94,6 @@ try {
     .click();
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Custom guest");
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await guest

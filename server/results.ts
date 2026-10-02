@@ -150,10 +150,23 @@ export function publicEvent(
       ),
       practice: me.practice ? safeEntry(me.practice) : undefined,
       submitted: me.submitted,
-      recoveryEnabled: !!me.recoveryHash,
     };
   }
   if (host) {
+    out.recoveryRequests = (e.recoveryRequests || [])
+      .filter(
+        (r) =>
+          r.status === "pending" &&
+          r.expiresAt > Date.now() &&
+          e.participants.some((p) => p.id === r.participantId),
+      )
+      .map((r) => ({
+        id: r.id,
+        participantId: r.participantId,
+        name: e.participants.find((p) => p.id === r.participantId)!.name,
+        createdAt: r.createdAt,
+        expiresAt: r.expiresAt,
+      }));
     out.bottlePhotos = e.bottlePhotos;
     out.wines =
       e.wines ??

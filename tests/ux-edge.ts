@@ -50,7 +50,6 @@ p.on("pageerror", (x) => errors.push(x.message));
 try {
   await p.goto(`${origin}/e/${e.id}`);
   await p.getByLabel("Your name").fill("Storage guest");
-  await p.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await openOptionalAvatar(p);
   await p.locator(".drawing-surface").click();
   await p.getByRole("button", { name: "Take my seat", exact: true }).click();

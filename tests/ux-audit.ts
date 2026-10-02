@@ -99,7 +99,6 @@ try {
   await capture(guest, "recover-phone");
   await button(guest, "New guest").click();
   await guest.getByLabel("Your name").fill("Alex");
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await button(guest, "Take my seat").click();
@@ -107,7 +106,6 @@ try {
   await capture(guest, "waiting-phone");
   await other.goto(`${origin}/e/${id}`);
   await other.getByLabel("Your name").fill("Alex");
-  await other.getByLabel("Create a recovery PIN", { exact: true }).fill("5731");
   await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await button(other, "Take my seat").click();

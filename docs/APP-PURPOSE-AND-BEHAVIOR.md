@@ -68,16 +68,15 @@ Wine types, producers, bottle photos, and the ordinary pouring-order editor free
 A new guest joins with:
 
 - A unique display name within the event.
-- A private recovery PIN containing 4–6 digits.
 - An optional avatar: a drawing or uploaded photo. Skipping it automatically uses the guest’s initials.
 
 Drawing supports colors, Undo, Clear, and touch/mouse/keyboard input. Avatar photos are cropped for the avatar, resized, and re-encoded without metadata. Guests can update their avatar while scorecard editing remains open.
 
-The browser retains a token so refreshes normally restore the same participant. A guest using another browser can choose **Recover my seat** and enter their original name and PIN. Recovery restores the same participant and backend-confirmed answers, rather than creating another guest.
+The browser retains a token so refreshes normally restore the same participant. A guest using another browser can choose **Recover my seat**, select their existing display name and request host approval. The private Host Console shows Approve/Deny; choosing a name alone never authenticates the browser. Requests expire after 15 minutes and survive refresh. Recovery restores the same participant and backend-confirmed answers, rather than creating another guest.
 
 Unsaved drafts stay in their original browser and do not transfer through recovery. The app cannot force a QR scanner to open Safari or Chrome.
 
-Guests can change their PIN. A host can replace a forgotten PIN after confirming identity in person and confirming the exact guest name. This preserves the guest’s seat, avatar, answers, and existing authorized browser sessions. PINs are hashed and never displayed or exported. Repeated failed recovery attempts trigger a temporary lockout.
+The host can also **Create recovery link** from a guest’s scorecard. The one-use link expires after 10 minutes and is shared only with that guest. A replacement invalidates the previous unused link; successful redemption consumes it atomically. Opening or refreshing a link does not redeem it. Recovery preserves existing sessions, avatar, confirmed answers/private notes, practice, seating and submission state. After lock, recovery grants read-only access; it cannot unlock editing. No PIN creation, entry, change or reset remains. Recovery metadata and credentials never reach Event Display or other guests. Abusive recovery attempts are rate-limited.
 
 ## 6. Waiting and Practice
 
@@ -220,7 +219,7 @@ The staged reveal build passed 37 server/unit tests, feature browser rehearsals,
 
 Physical iPhone/Android/TV testing, actual camera/file picking, in-app browser downloads, and a full room of simultaneous production users remain unverified. Automated accessibility checks passed for tested screens, but do not establish comprehensive accessibility certification.
 
-Tonight’s practical operating expectations: use a regular phone browser, remember the recovery PIN, wait for Saved, distinguish round readiness from final submission, verify the physical pouring order, and resolve submission warnings before locking.
+Tonight’s practical operating expectations: use a regular phone browser, ask the host to approve recovery when switching browsers, wait for Saved, distinguish round readiness from final submission, verify the physical pouring order, and resolve submission warnings before locking.
 
 ## 16. Three application surfaces
 

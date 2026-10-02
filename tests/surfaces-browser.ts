@@ -58,7 +58,6 @@ try {
   };
   await guest.goto(origin + `/e/${id}`);
   await guest.getByLabel("Your name").fill("Alex Guest");
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await guest
     .getByRole("button", { name: "Take my seat", exact: true })
     .click();

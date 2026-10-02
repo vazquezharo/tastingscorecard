@@ -126,9 +126,6 @@ try {
       await page.mouse.move(redrawBox.x + 120, redrawBox.y + 140, { steps: 8 });
       await page.mouse.up();
     }
-    await page
-      .getByLabel("Create a recovery PIN")
-      .fill(i === 0 ? "4826" : "5731");
     if (i === 1) {
       await openOptionalAvatar(page);
       await page.locator(".drawing-surface").click();

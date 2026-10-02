@@ -1,3 +1,4 @@
+import walnutTabletop from "./assets/walnut-tabletop.png";
 import { useEffect, useState } from "react";
 import { readLocal, writeLocal } from "./storage";
 import { Avatar } from "./avatar";
@@ -80,7 +81,9 @@ export function SeatingEditor({
           <p className="muted">Guests will appear here after joining.</p>
         )}
         <p className="small muted">
-          Seats run clockwise from the top of the table.
+          {draft.shape === "rectangle"
+            ? "Seats run along the two long sides only: the top from left to right, then the bottom from right to left. Eight seats means four on each side, with nobody at the heads."
+            : "Seats run clockwise from the top of the table."}
         </p>
         <div className="seat-assignments">
           {draft.seats.map((id, i) => (
@@ -141,8 +144,19 @@ function position(index: number, count: number, shape: Seating["shape"]) {
       top: `${50 + 40 * Math.sin(angle)}%`,
     };
   }
-  // Clockwise from the top center, with rectangular tables allocating more seats to long sides.
-  const width = shape === "square" ? 1 : 1.6;
+  if (shape === "rectangle") {
+    const topCount = Math.ceil(count / 2);
+    const isTop = index < topCount;
+    const sideCount = isTop ? topCount : count - topCount;
+    const sideIndex = isTop ? index : index - topCount;
+    const along = (sideIndex + 0.5) / sideCount;
+    return {
+      left: `${20 + (isTop ? along : 1 - along) * 60}%`,
+      top: isTop ? "10%" : "90%",
+    };
+  }
+  // Square tables keep clockwise perimeter seating.
+  const width = 1;
   const perimeter = 2 * (width + 1);
   let distance = ((index / count) * perimeter + width / 2) % perimeter;
   let x: number, y: number;
@@ -185,6 +199,7 @@ export function TableDisplay({
     return () => window.removeEventListener("resize", resize);
   }, []);
   const compact =
+    event.seating?.shape === "rectangle" ||
     (!readOnly && layout === "compact") ||
     ((readOnly || layout === "auto") &&
       ((event.seating?.seats.length ?? 0) > 12 ||
@@ -197,6 +212,46 @@ export function TableDisplay({
   const unseated = guests.filter((g) => !assigned.has(g.id));
   const status = (g: (typeof guests)[number]) =>
     event.phase === "setup" ? "Joined" : g.ready ? "Ready ✓" : "Waiting";
+  const savedSeats = (event.seating?.seats || []).map((id, index) => ({
+    id,
+    index,
+  }));
+  const hasAssignedGuests = savedSeats.some((seat) =>
+    guests.some((g) => g.id === seat.id),
+  );
+  const halfway = Math.ceil(savedSeats.length / 2);
+  // Collapse empty spaces only in the public rectangle; keep seat numbers and physical sides.
+  const visibleSide = (seats: typeof savedSeats) =>
+    seats.filter(
+      (seat) => !hasAssignedGuests || guests.some((g) => g.id === seat.id),
+    );
+  const topSeats = visibleSide(savedSeats.slice(0, halfway));
+  const bottomSeats = visibleSide(savedSeats.slice(halfway));
+  const renderSeat = ({ id, index }: (typeof savedSeats)[number]) => {
+    const guest = guests.find((g) => g.id === id);
+    return (
+      <div
+        key={index}
+        className={`table-seat ${guest?.ready && event.phase !== "setup" ? "is-ready" : ""}`}
+        style={
+          compact
+            ? undefined
+            : position(index, savedSeats.length, event.seating!.shape)
+        }
+      >
+        <small>Seat {index + 1}</small>
+        {guest ? (
+          <>
+            <Avatar person={guest} />
+            <strong title={guest.name}>{guest.name}</strong>
+            <span>{status(guest)}</span>
+          </>
+        ) : (
+          <span className="empty-seat">Empty seat</span>
+        )}
+      </div>
+    );
+  };
   return (
     <section className="table-display" aria-label="Current round readiness">
       <h2>
@@ -232,7 +287,26 @@ export function TableDisplay({
           <div
             className={`table-map table-${event.seating.shape} ${event.seating.seats.length > 14 ? "many-seats" : ""} ${compact ? "compact-seats" : ""}`}
           >
-            <div className="table-surface">
+            {event.seating.shape === "rectangle" && (
+              <div
+                className="table-side table-side-top"
+                style={
+                  {
+                    "--side-seats": Math.max(1, topSeats.length),
+                  } as React.CSSProperties
+                }
+              >
+                {topSeats.map(renderSeat)}
+              </div>
+            )}
+            <div
+              className="table-surface"
+              style={
+                event.seating.shape === "rectangle"
+                  ? { backgroundImage: `url(${walnutTabletop})` }
+                  : undefined
+              }
+            >
               <span>
                 {event.phase === "setup"
                   ? "The tasting table"
@@ -245,39 +319,27 @@ export function TableDisplay({
                     : event.seating.shape === "square"
                       ? "Square"
                       : "Rectangular"}{" "}
-                  table · numbered clockwise from the top
+                  table ·{" "}
+                  {event.seating.shape === "rectangle"
+                    ? "seats on long sides only"
+                    : "numbered clockwise from the top"}
                 </small>
               )}
             </div>
-            {event.seating.seats.map((id, i) => {
-              const guest = guests.find((g) => g.id === id);
-              return (
-                <div
-                  key={i}
-                  className={`table-seat ${guest?.ready && event.phase !== "setup" ? "is-ready" : ""}`}
-                  style={
-                    compact
-                      ? undefined
-                      : position(
-                          i,
-                          event.seating!.seats.length,
-                          event.seating!.shape,
-                        )
-                  }
-                >
-                  <small>Seat {i + 1}</small>
-                  {guest ? (
-                    <>
-                      <Avatar person={guest} />
-                      <strong title={guest.name}>{guest.name}</strong>
-                      <span>{status(guest)}</span>
-                    </>
-                  ) : (
-                    <span className="empty-seat">Empty seat</span>
-                  )}
-                </div>
-              );
-            })}
+            {event.seating.shape === "rectangle" ? (
+              <div
+                className="table-side table-side-bottom"
+                style={
+                  {
+                    "--side-seats": Math.max(1, bottomSeats.length),
+                  } as React.CSSProperties
+                }
+              >
+                {bottomSeats.map(renderSeat)}
+              </div>
+            ) : (
+              savedSeats.map(renderSeat)
+            )}
           </div>
         </div>
       )}

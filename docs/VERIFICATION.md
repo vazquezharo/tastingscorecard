@@ -1,3 +1,7 @@
+## Current phase: host-approved recovery, live-first Host Console and dynamic Event Display
+
+PIN behavior described in historical sections below is superseded. Current guests recover by selecting their existing name and receiving host approval, or by redeeming a host-created single-use link. Same-browser token recovery remains unchanged. See [current recovery implementation and verification](GUEST-RECOVERY.md).
+
 # Verification report
 
 Verified in this workspace on 2026-10-01. The existing main website was inspected and preserved. A separate `blind-tasting` Vercel project and dedicated Neon PostgreSQL database are now live at https://tasting.haroldvazquez.com.

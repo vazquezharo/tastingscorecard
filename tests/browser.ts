@@ -111,7 +111,6 @@ try {
   const id = host.url().split("/").at(-1)!;
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Harold");
-  await guest.getByLabel("Create a recovery PIN").fill("4826");
   await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await guest.getByRole("button", { name: "Take my seat" }).click();
@@ -125,13 +124,11 @@ try {
   );
   await other.goto(`${origin}/e/${id}`);
   await other.getByLabel("Your name").fill("Harold");
-  await other.getByLabel("Create a recovery PIN").fill("5731");
   await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await other.getByRole("button", { name: "Take my seat" }).click();
   await waitText(other, "That name is already in use");
   await other.getByLabel("Your name").fill("Casey");
-  await other.getByLabel("Create a recovery PIN").fill("5731");
   await openOptionalAvatar(other);
   await other.locator(".drawing-surface").click();
   await other.getByRole("button", { name: "Take my seat" }).click();
@@ -356,7 +353,7 @@ try {
   );
   await noOverflow(guest);
   await guest.evaluate(() => (document.documentElement.style.fontSize = ""));
-  await host.getByText("Event administration", { exact: true }).click();
+  await host.getByText("Event setup & fixes", { exact: true }).click();
   const downloadPromise = host.waitForEvent("download");
   await host.getByRole("link", { name: "Download CSV" }).click();
   const download = await downloadPromise;

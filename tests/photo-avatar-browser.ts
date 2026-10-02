@@ -1,3 +1,4 @@
+import { approveSeatRecovery } from "./browser-helpers";
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
@@ -43,7 +44,6 @@ try {
   const id = host.url().split("/").at(-1)!;
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Photo guest");
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await guest.getByText("Add an avatar (optional)", { exact: true }).click();
   const join = guest.getByRole("button", { name: "Take my seat", exact: true });
   assert.equal(await join.isDisabled(), false);
@@ -123,11 +123,7 @@ try {
   await recovered
     .getByRole("button", { name: "Recover my seat", exact: true })
     .click();
-  await recovered.getByLabel("Your name").fill("Photo guest");
-  await recovered.getByLabel("Your recovery PIN", { exact: true }).fill("4826");
-  await recovered
-    .getByRole("button", { name: "Recover scorecard", exact: true })
-    .click();
+  await approveSeatRecovery(recovered, hc.request, origin, id, "Photo guest");
   await recovered.locator(".event-line .avatar-icon img").waitFor();
   async function control(action: string, extra = {}) {
     const e = await (

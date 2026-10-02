@@ -1,3 +1,9 @@
+import {
+  RecoverSeat,
+  RecoveryLinkArrival,
+  HostRecoveryRequests,
+  CreateRecoveryLink,
+} from "./recovery";
 import { RevealDisplay } from "./reveal-display";
 import { AssistedEntry } from "./assisted-entry";
 import { FinalScorecard } from "./final-scorecard";
@@ -18,7 +24,6 @@ import {
   TimerControls,
   PouringCorrection,
   CorrectionHistory,
-  PinReset,
   type HostControl,
 } from "./host-tools";
 import { SeatingEditor, TableDisplay } from "./seating";
@@ -172,13 +177,23 @@ function Join({
   recoveryOnly?: boolean;
 }) {
   const [name, setName] = useState(""),
-    [pin, setPin] = useState(""),
     [returning, setReturning] = useState(recoveryOnly),
     [avatar, setAvatar] = useState<AvatarDrawing>([]),
     [avatarPhoto, setAvatarPhoto] = useState(""),
     [photoBusy, setPhotoBusy] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let stopped = false;
+    void api<{ status: string }>(`/events/${event.id}/recovery`)
+      .then((r) => {
+        if (!stopped && r.status === "pending") setReturning(true);
+      })
+      .catch(() => {});
+    return () => {
+      stopped = true;
+    };
+  }, [event.id]);
   return (
     <main className="narrow join">
       <div className="eyebrow">YOU’RE INVITED</div>
@@ -212,114 +227,97 @@ function Join({
           </button>
         </div>
       )}
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setError("");
-          setBusy(true);
-          try {
-            onJoined(
-              await api(
-                `/events/${event.id}/${returning ? "recover" : "join"}`,
-                "POST",
-                returning ? { name, pin } : { name, pin, avatar, avatarPhoto },
-              ),
-            );
-          } catch (e) {
-            setError((e as Error).message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <label htmlFor="name">Your name</label>
-        <input
-          id="name"
-          autoComplete="nickname"
-          maxLength={40}
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="How should we call you?"
-        />
-        <label htmlFor="guest-pin">
-          {returning ? "Your recovery PIN" : "Create a recovery PIN"}
-        </label>
-        <input
-          id="guest-pin"
-          type="password"
-          inputMode="numeric"
-          autoComplete={returning ? "current-password" : "new-password"}
-          pattern="[0-9]{4,6}"
-          minLength={4}
-          maxLength={6}
-          required
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-        />
-        <p className="small muted">
-          4–6 digits. Use your display name and PIN to recover this seat in
-          another browser. Keep your PIN private.
-        </p>
-        {!returning && (
-          <details className="join-avatar" aria-labelledby="join-avatar-title">
-            <summary id="join-avatar-title">Add an avatar (optional)</summary>
-            <h2>Make your seat your own</h2>
-            <p className="small muted">
-              Draw an icon or upload a photo, or skip this and use your
-              initials.
-            </p>
-            <PhotoPicker
-              value={avatarPhoto}
-              onBusy={setPhotoBusy}
-              disabled={busy}
-              onChange={(photo) => {
-                setAvatarPhoto(photo);
-                if (photo) setAvatar([]);
-              }}
-            />
-            {!avatarPhoto && (
-              <DrawingPad
-                value={avatar}
-                onChange={setAvatar}
-                disabled={busy || photoBusy}
-              />
-            )}
-            <p id="avatar-help" className="small" role="status">
-              {avatarPhoto
-                ? "Your photo is ready."
-                : avatar.length
-                  ? "Your drawing is ready."
-                  : "No avatar selected. Your initials will be used."}
-            </p>
-          </details>
-        )}
-        {!returning && !avatar.length && !avatarPhoto && (
-          <p className="initials-preview small">
-            <Avatar person={{ name: name.trim() || "Guest" }} /> Your initials
-            will be used. You can add an avatar later.
-          </p>
-        )}
-        <p className="small muted">
-          {returning
-            ? "Forgot your PIN? If your original browser still remembers your seat, open Session recovery & event link there to set a new PIN. You can also ask your host to reset your PIN after confirming your identity in person."
-            : "Remember your name and PIN before leaving this page."}
-        </p>
-        {error && <ErrorBox message={error} />}
-        <button
-          className="primary"
-          disabled={busy || photoBusy}
-          aria-describedby={!returning ? "avatar-help" : undefined}
+      {returning ? (
+        <RecoverSeat event={event} onJoined={onJoined} />
+      ) : (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setError("");
+            setBusy(true);
+            try {
+              onJoined(
+                await api(`/events/${event.id}/join`, "POST", {
+                  name,
+                  avatar,
+                  avatarPhoto,
+                }),
+              );
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
         >
-          {busy
-            ? returning
-              ? "Recovering…"
-              : "Joining…"
-            : returning
-              ? "Recover scorecard"
-              : "Take my seat"}
-        </button>
-      </form>
+          <label htmlFor="name">Your name</label>
+          <input
+            id="name"
+            autoComplete="nickname"
+            maxLength={40}
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="How should we call you?"
+          />
+          {!returning && (
+            <details
+              className="join-avatar"
+              aria-labelledby="join-avatar-title"
+            >
+              <summary id="join-avatar-title">Add an avatar (optional)</summary>
+              <h2>Make your seat your own</h2>
+              <p className="small muted">
+                Draw an icon or upload a photo, or skip this and use your
+                initials.
+              </p>
+              <PhotoPicker
+                value={avatarPhoto}
+                onBusy={setPhotoBusy}
+                disabled={busy}
+                onChange={(photo) => {
+                  setAvatarPhoto(photo);
+                  if (photo) setAvatar([]);
+                }}
+              />
+              {!avatarPhoto && (
+                <DrawingPad
+                  value={avatar}
+                  onChange={setAvatar}
+                  disabled={busy || photoBusy}
+                />
+              )}
+              <p id="avatar-help" className="small" role="status">
+                {avatarPhoto
+                  ? "Your photo is ready."
+                  : avatar.length
+                    ? "Your drawing is ready."
+                    : "No avatar selected. Your initials will be used."}
+              </p>
+            </details>
+          )}
+          {!returning && !avatar.length && !avatarPhoto && (
+            <p className="initials-preview small">
+              <Avatar person={{ name: name.trim() || "Guest" }} /> Your initials
+              will be used. You can add an avatar later.
+            </p>
+          )}
+          {error && <ErrorBox message={error} />}
+          <button
+            className="primary"
+            disabled={busy || photoBusy}
+            aria-describedby={!returning ? "avatar-help" : undefined}
+          >
+            {busy
+              ? returning
+                ? "Recovering…"
+                : "Joining…"
+              : returning
+                ? "Recover scorecard"
+                : "Take my seat"}
+          </button>
+        </form>
+      )}
       <p className="small muted">
         This browser remembers your seat. If a QR reader loses the page, open
         this event link in Safari or your preferred browser and choose Recover
@@ -1107,86 +1105,21 @@ function Scorecard({
     </main>
   );
 }
-function RecoverySettings({
-  event,
-  onSaved,
-}: {
-  event: PublicEvent;
-  onSaved: (e: PublicEvent) => void;
-}) {
-  const [pin, setPin] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+function RecoverySettings({ event }: { event: PublicEvent }) {
   return (
     <div className="narrow recovery-settings">
       <details>
-        <summary>
-          {event.me!.recoveryEnabled
-            ? "Session recovery & event link"
-            : "Set a PIN so you can recover your seat"}
-        </summary>
+        <summary>Session recovery & event link</summary>
         <p className="small muted">
-          Your seat: <strong>{event.me!.name}</strong>. Reopen this event in any
-          browser, choose Recover my seat, and enter this name and your PIN.
-          Your saved ratings, guesses and drawing come back.
+          Your seat: <strong>{event.me!.name}</strong>. This browser remembers
+          your seat automatically. In another browser, reopen the invitation,
+          choose Recover my seat, select your name and ask your host to approve.
+          Your backend-confirmed answers, avatar and seating will return.
         </p>
         <p className="small">
           <a href={link(`/e/${event.id}`)}>Bookmark this event link</a>
         </p>
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setBusy(true);
-            setMessage("");
-            setError("");
-            try {
-              onSaved(
-                await api<PublicEvent>(`/events/${event.id}/pin`, "PUT", {
-                  pin,
-                }),
-              );
-              setPin("");
-              setMessage("Recovery PIN saved. Remember your name and PIN.");
-            } catch (e) {
-              setError((e as Error).message);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <label htmlFor="set-pin">
-            {event.me!.recoveryEnabled
-              ? "New recovery PIN"
-              : "Create a recovery PIN"}
-          </label>
-          <input
-            id="set-pin"
-            type="password"
-            inputMode="numeric"
-            autoComplete="new-password"
-            pattern="[0-9]{4,6}"
-            minLength={4}
-            maxLength={6}
-            required
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-          />
-          <p className="small muted">
-            4–6 digits. Set this before leaving a QR reader’s browser.
-          </p>
-          <button disabled={busy}>
-            {busy ? "Saving PIN…" : "Save recovery PIN"}
-          </button>
-        </form>
-        {message && <p role="status">{message}</p>}
-        {error && <ErrorBox message={error} />}
       </details>
-      {!event.me!.recoveryEnabled && (
-        <p className="small warning">
-          This seat has no recovery PIN yet. Set one before switching browsers.
-        </p>
-      )}
     </div>
   );
 }
@@ -1250,6 +1183,7 @@ function GuestApp({ id }: { id: string }) {
               : "Guest App"
         }
       />
+      <RecoveryLinkArrival id={id} onJoined={accept} />
       {error && (
         <div className="narrow">
           <ErrorBox
@@ -1261,15 +1195,8 @@ function GuestApp({ id }: { id: string }) {
         <div className="narrow">
           <p className="warning" role="status">
             This browser cannot keep your seat or drafts after closing. Keep
-            this tab open, wait for Saved, and use your name and PIN to recover
-            in another browser.
-          </p>
-        </div>
-      )}
-      {data?.me && !data.me.recoveryEnabled && (
-        <div className="narrow">
-          <p className="small warning">
-            Set a recovery PIN below before leaving this browser.
+            this tab open, wait for Saved, and ask your host to approve seat
+            recovery in another browser.
           </p>
         </div>
       )}
@@ -1311,7 +1238,7 @@ function GuestApp({ id }: { id: string }) {
       ) : (
         <Scorecard event={data} onSaved={accept} />
       )}
-      {data?.me && <RecoverySettings event={data} onSaved={accept} />}
+      {data?.me && <RecoverySettings event={data} />}
     </>
   );
 }
@@ -1603,7 +1530,8 @@ function EventDisplay({ id }: { id: string }) {
               />
               <h2>Or scan to join</h2>
               <p>
-                The group-chat link works too. Enter your name and recovery PIN.
+                Open the group-chat invitation to join or ask your host to
+                recover your seat.
               </p>
               <a href={link(`/e/${id}`)}>
                 <span className="display-link-full">
@@ -1923,11 +1851,11 @@ function HostGuestSheet({
       >
         Enter answers for {guest.name} · spoiler-minimized page
       </a>
-      <PinReset
-        name={guest.name}
+      <CreateRecoveryLink
+        eventId={event.id}
         participantId={guest.id}
+        name={guest.name}
         disabled={disabled}
-        control={control}
       />
       {Array.from({ length: 8 }, (_, i) => i + 1).map((round) => {
         const entry = guest.entries[round];
@@ -2119,6 +2047,11 @@ function HostEvent({ id }: { id: string }) {
         </div>
       </div>
       {(error || actionError) && <ErrorBox message={actionError || error} />}
+      <HostRecoveryRequests
+        event={data}
+        disabled={busy || !!error}
+        onSaved={accept}
+      />
       <section className="host-state-overview" aria-label="Event state">
         <div>
           <span>Current state</span>
@@ -2167,7 +2100,7 @@ function HostEvent({ id }: { id: string }) {
           )}
           <h2>
             {data.phase === "setup"
-              ? "The private pouring order"
+              ? "Ready to start?"
               : data.phase === "tasting"
                 ? "Keep the glasses moving"
                 : data.phase === "summary"
@@ -2176,83 +2109,23 @@ function HostEvent({ id }: { id: string }) {
           </h2>
           {data.phase === "setup" ? (
             <>
-              <BottlePhotos
-                event={data}
-                disabled={busy || !!error}
-                onSaved={accept}
-              />
-              <WineListEditor
-                event={data}
-                disabled={busy || !!error}
-                onSave={async (wines) => {
-                  await control("wines", { wines });
-                }}
-              />
               <p className="muted">
-                Assign each wine type once. This is your actual pouring order.
-                Only the host can see it.
+                Guests can join and try a private practice round. Configure the
+                wine list and save the pouring order in Event setup & fixes
+                below, then start when everyone is ready.
               </p>
-              <p className="small muted">
-                Guests can try a private practice round on their phones while
-                waiting. Start round 1 to end practice; practice answers never
-                count toward results.
-              </p>
-              <div className="key-grid">
-                {Array.from({ length: 8 }, (_, i) => (
-                  <label key={i}>
-                    Round {i + 1}
-                    <select
-                      aria-label={`Answer for round ${i + 1}`}
-                      disabled={busy || !!error}
-                      value={key[i]}
-                      onChange={(e) =>
-                        setKey((p) =>
-                          p.map((v, j) => (i === j ? e.target.value : v)),
-                        )
-                      }
-                    >
-                      <option value="">Assign wine type</option>
-                      {data.choices.map((w) => (
-                        <option key={w}>{w}</option>
-                      ))}
-                    </select>
-                  </label>
-                ))}
-              </div>
-              <p id="key-help" className="small muted" role="status">
-                {key.some((w) => !w)
-                  ? `Assign ${key.filter((w) => !w).length} remaining rounds, using each wine once.`
-                  : new Set(key).size !== 8
-                    ? "Repeated wine types in the key. Assign each wine once before saving."
-                    : JSON.stringify(key) !== JSON.stringify(data.key)
-                      ? "Save this key to enable Start round 1."
-                      : "Answer key saved. Start when your guests are ready."}
-              </p>
-              <div className="actions">
-                <button
-                  disabled={
-                    busy ||
-                    !!error ||
-                    new Set(key).size !== 8 ||
-                    key.some((v) => !v)
-                  }
-                  onClick={() => void control("key", { key })}
-                >
-                  Save answer key
-                </button>
-                <button
-                  className="primary"
-                  disabled={
-                    busy ||
-                    !!error ||
-                    data.key?.length !== 8 ||
-                    JSON.stringify(key) !== JSON.stringify(data.key)
-                  }
-                  onClick={() => void control("start")}
-                >
-                  Start round 1
-                </button>
-              </div>
+              <button
+                className="primary"
+                disabled={
+                  busy ||
+                  !!error ||
+                  data.key?.length !== 8 ||
+                  JSON.stringify(key) !== JSON.stringify(data.key)
+                }
+                onClick={() => void control("start")}
+              >
+                Start round 1
+              </button>
             </>
           ) : data.phase === "tasting" ? (
             <>
@@ -2268,10 +2141,10 @@ function HostEvent({ id }: { id: string }) {
                   className="host-readiness"
                   aria-label="Current round readiness"
                 >
-                  <h3>
+                  <h2>
                     {data.tableGuests.filter((p) => p.ready).length} of{" "}
                     {data.participants} ready for round {data.unlocked}
-                  </h3>
+                  </h2>
                   <p className="small muted">
                     Ready means a valid guess and rating are confirmed saved.
                     Guests can still edit until locking.
@@ -2415,6 +2288,20 @@ function HostEvent({ id }: { id: string }) {
               <small> submitted</small>
             </strong>
           </div>
+          {data.phase === "tasting" && (
+            <TimerControls
+              event={data}
+              disabled={busy || !!error}
+              control={control}
+            />
+          )}
+          <SeatingEditor
+            event={data}
+            disabled={busy || !!error}
+            onSave={async (seating) => {
+              await control("seating", { seating });
+            }}
+          />
           {data.roster?.length ? (
             <div className="roster">
               {data.roster.map((p) => (
@@ -2456,7 +2343,7 @@ function HostEvent({ id }: { id: string }) {
                     onClick={() => {
                       if (
                         window.confirm(
-                          `Remove ${p.name} from this tasting? Their seat, scorecard and recovery PIN will be deleted. Counts and results will update. This cannot be undone.`,
+                          `Remove ${p.name} from this tasting? Their seat, scorecard and recovery access will be deleted. Counts and results will update. This cannot be undone.`,
                         )
                       )
                         void control("remove", {
@@ -2476,20 +2363,6 @@ function HostEvent({ id }: { id: string }) {
               optional QR code.
             </p>
           )}
-          {data.phase === "tasting" && (
-            <TimerControls
-              event={data}
-              disabled={busy || !!error}
-              control={control}
-            />
-          )}
-          <SeatingEditor
-            event={data}
-            disabled={busy || !!error}
-            onSave={async (seating) => {
-              await control("seating", { seating });
-            }}
-          />
           <img
             className="host-qr"
             src={link(`/api/events/${id}/qr`)}
@@ -2501,8 +2374,88 @@ function HostEvent({ id }: { id: string }) {
           </p>
         </section>
       </div>
-      <details className="panel event-administration">
-        <summary>Event administration</summary>
+      {(data.phase === "locked" || data.phase === "summary") && (
+        <Results event={data} />
+      )}
+      <details
+        className="panel event-administration"
+        open={data.phase === "setup"}
+      >
+        <summary>Event setup & fixes</summary>
+        <p className="small muted">
+          Initial wine configuration and corrective tools. Live rounds, guests
+          and table controls are above.
+        </p>
+        {data.phase === "setup" && (
+          <>
+            <BottlePhotos
+              event={data}
+              disabled={busy || !!error}
+              onSaved={accept}
+            />
+            <WineListEditor
+              event={data}
+              disabled={busy || !!error}
+              onSave={async (wines) => {
+                await control("wines", { wines });
+              }}
+            />
+            <p className="muted">
+              Assign each wine type once. This is your actual pouring order.
+              Only the host can see it.
+            </p>
+            <p className="small muted">
+              Guests can try a private practice round on their phones while
+              waiting. Start round 1 to end practice; practice answers never
+              count toward results.
+            </p>
+            <div className="key-grid">
+              {Array.from({ length: 8 }, (_, i) => (
+                <label key={i}>
+                  Round {i + 1}
+                  <select
+                    aria-label={`Answer for round ${i + 1}`}
+                    disabled={busy || !!error}
+                    value={key[i]}
+                    onChange={(e) =>
+                      setKey((p) =>
+                        p.map((v, j) => (i === j ? e.target.value : v)),
+                      )
+                    }
+                  >
+                    <option value="">Assign wine type</option>
+                    {data.choices.map((w) => (
+                      <option key={w}>{w}</option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <p id="key-help" className="small muted" role="status">
+              {key.some((w) => !w)
+                ? `Assign ${key.filter((w) => !w).length} remaining rounds, using each wine once.`
+                : new Set(key).size !== 8
+                  ? "Repeated wine types in the key. Assign each wine once before saving."
+                  : JSON.stringify(key) !== JSON.stringify(data.key)
+                    ? "Save this key to enable Start round 1."
+                    : "Answer key saved. Start when your guests are ready."}
+            </p>
+            <div className="actions">
+              <button
+                disabled={
+                  busy ||
+                  !!error ||
+                  new Set(key).size !== 8 ||
+                  key.some((v) => !v)
+                }
+                onClick={() => void control("key", { key })}
+              >
+                Save answer key
+              </button>
+            </div>
+          </>
+        )}
+
         {(data.phase === "locked" || data.phase === "summary") && (
           <a className="button" href={link(`/api/events/${id}/export`)}>
             Download CSV
@@ -2543,9 +2496,6 @@ function HostEvent({ id }: { id: string }) {
           </details>
         )}
       </details>
-      {(data.phase === "locked" || data.phase === "summary") && (
-        <Results event={data} />
-      )}
     </main>
   );
 }

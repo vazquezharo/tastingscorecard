@@ -53,7 +53,6 @@ try {
   ] as const) {
     await p.goto(`${origin}/e/${id}`);
     await p.getByLabel("Your name").fill(name);
-    await p.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
     await openOptionalAvatar(p);
     await p.locator(".drawing-surface").click();
     await p.getByRole("button", { name: "Take my seat", exact: true }).click();
@@ -101,7 +100,11 @@ try {
   });
   await host.keyboard.press("Escape");
   await dialog.waitFor({ state: "hidden" });
-  await host.waitForFunction(() => document.activeElement?.getAttribute("aria-label") === "View Alex’s scorecard");
+  await host.waitForFunction(
+    () =>
+      document.activeElement?.getAttribute("aria-label") ===
+      "View Alex’s scorecard",
+  );
   for (let r = 2; r <= 8; r++) await control("unlock");
   const token = await guest.evaluate(() =>
     localStorage.getItem("tasting.identity.v1"),

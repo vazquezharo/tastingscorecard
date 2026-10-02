@@ -76,7 +76,6 @@ try {
     headers,
     data: {
       name: "UniqueGuestName",
-      pin: "4826",
       avatar: [{ color: "#d6ad69", points: [[10, 10]] }],
     },
   });

@@ -55,7 +55,6 @@ try {
   };
   await guest.goto(origin + "/e/" + id);
   await guest.getByLabel("Your name").fill("Alex");
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await guest
@@ -72,7 +71,7 @@ try {
   const entry = before.roster[0].entries[1];
   await display.goto(origin + "/projector/e/" + id);
   // Correct swapped bottles through the host UI, with explicit review and confirmation.
-  await host.getByText("Event administration", { exact: true }).click();
+  await host.getByText("Event setup & fixes", { exact: true }).click();
   await host.getByText("Correct pouring order", { exact: true }).click();
   const correction = host.locator(".pouring-correction");
   await correction
@@ -106,7 +105,7 @@ try {
       .locator(".event-administration")
       .evaluate((el) => (el as HTMLDetailsElement).open))
   )
-    await host.getByText("Event administration", { exact: true }).click();
+    await host.getByText("Event setup & fixes", { exact: true }).click();
   await host
     .getByText("Pouring-order correction history", { exact: true })
     .click();
@@ -121,35 +120,19 @@ try {
   await host
     .getByRole("button", { name: "View Alex’s scorecard", exact: true })
     .click();
-  await host.getByText("Help Alex recover their seat", { exact: true }).click();
-  const pin = host.locator(".pin-reset");
-  await pin.getByLabel("New recovery PIN", { exact: true }).fill("7531");
-  await expect(
-    pin.getByRole("button", { name: "Reset guest PIN" }),
-  ).toBeDisabled();
-  await pin
-    .getByLabel("I confirmed this guest is Alex.", { exact: true })
-    .check();
-  await pin.getByLabel("Guest’s name to confirm PIN reset").fill("Alex");
-  await pin.getByRole("button", { name: "Reset guest PIN" }).click();
-  await expect(pin.getByText(/PIN reset for Alex/)).toBeVisible();
-  await expect(pin.getByLabel("New recovery PIN", { exact: true })).toHaveValue(
-    "",
-  );
+  await host
+    .getByRole("button", { name: "Create recovery link", exact: true })
+    .click();
+  const recoveryUrl = await host
+    .getByLabel("Recovery URL", { exact: true })
+    .inputValue();
   await host.getByRole("button", { name: "Close", exact: true }).click();
-  await recovered.goto(origin + "/e/" + id);
+  await recovered.goto(recoveryUrl);
   await recovered
-    .getByRole("button", { name: "Recover my seat", exact: true })
-    .click();
-  await recovered.getByLabel("Your name").fill("Alex");
-  await recovered.getByLabel("Your recovery PIN").fill("4826");
-  await recovered
-    .getByRole("button", { name: "Recover scorecard", exact: true })
-    .click();
-  await expect(recovered.getByText(/Name or PIN not recognized/)).toBeVisible();
-  await recovered.getByLabel("Your recovery PIN").fill("7531");
-  await recovered
-    .getByRole("button", { name: "Recover scorecard", exact: true })
+    .getByRole("button", {
+      name: "Recover my seat with this link",
+      exact: true,
+    })
     .click();
   await expect(recovered.locator("#notes-1")).toHaveValue(
     "Private retained note",
@@ -275,7 +258,7 @@ try {
   await expect(display.locator(".table-map")).toHaveCount(0);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: confirmed private correction/history, PIN reset and same-seat browser recovery, persistent synchronized timer/real expiry, 20 long-name guests in three shapes at 1920×1080/1280×720/1024×768, automatic read-only layout, no seat overlap or overflow, accessibility, corrected reveal and lock compatibility.",
+    "PASS: confirmed private correction/history, single-use link and same-seat browser recovery, persistent synchronized timer/real expiry, 20 long-name guests in three shapes at 1920×1080/1280×720/1024×768, automatic read-only layout, no seat overlap or overflow, accessibility, corrected reveal and lock compatibility.",
   );
 } finally {
   await browser.close();

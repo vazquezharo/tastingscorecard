@@ -52,9 +52,6 @@ try {
   for (let i = 0; i < guests.length; i++) {
     await guests[i].goto(`${origin}/e/${id}`);
     await guests[i].getByLabel("Your name").fill(i ? "Blair" : "Alex");
-    await guests[i]
-      .getByLabel("Create a recovery PIN", { exact: true })
-      .fill("4826");
     await openOptionalAvatar(guests[i]);
     await guests[i].locator(".drawing-surface").click();
     await guests[i]
@@ -189,7 +186,6 @@ try {
       headers: { Origin: origin, "X-Guest-Token": crypto.randomUUID() },
       data: {
         name,
-        pin: "4826",
         avatar: [
           {
             color: "#d6ad69",
@@ -204,6 +200,45 @@ try {
     assert.equal(response.status(), 200);
   }
   const seatIds = (await read()).tableGuests.map((g: { id: string }) => g.id);
+  // Eight-seat rectangle: four above and four below, with no head seats.
+  await control("seating", {
+    seating: { shape: "rectangle", seats: seatIds.slice(0, 8) },
+  });
+  await display.waitForFunction(
+    () =>
+      document.querySelectorAll(".table-rectangle .table-seat").length === 8,
+  );
+  const rectangle = await display.locator(".table-rectangle").evaluate((el) => {
+    const table = el.querySelector(".table-surface")!.getBoundingClientRect();
+    return {
+      table: {
+        left: table.left,
+        right: table.right,
+        top: table.top,
+        bottom: table.bottom,
+      },
+      seats: Array.from(el.querySelectorAll(".table-seat")).map((seat) => {
+        const r = seat.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+      }),
+    };
+  });
+  assert.equal(
+    rectangle.seats.filter((s) => s.bottom <= rectangle.table.top).length,
+    4,
+  );
+  assert.equal(
+    rectangle.seats.filter((s) => s.top >= rectangle.table.bottom).length,
+    4,
+  );
+  assert.ok(
+    rectangle.seats.every(
+      (s) => s.bottom <= rectangle.table.top || s.top >= rectangle.table.bottom,
+    ),
+    "No rectangular head seats",
+  );
+  assert.ok(rectangle.seats[0].left < rectangle.seats[3].left);
+  assert.ok(rectangle.seats[4].left > rectangle.seats[7].left);
   for (const shape of ["round", "square", "rectangle"]) {
     await control("seating", { seating: { shape, seats: seatIds } });
     await display.locator(`.table-${shape}`).waitFor();

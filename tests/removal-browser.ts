@@ -44,7 +44,6 @@ try {
   const id = host.url().split("/").at(-1)!;
   await guest.goto(`${origin}/e/${id}`);
   await guest.getByLabel("Your name").fill("Alex");
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await button(guest, "Take my seat").click();
@@ -109,14 +108,18 @@ try {
   assert.equal(removed.participants, 0);
   assert.equal(removed.me, undefined);
   await button(guest, "Recover my seat").click();
-  await guest.getByLabel("Your name").fill("Alex");
-  await guest.getByLabel("Your recovery PIN").fill("4826");
-  await button(guest, "Recover scorecard").click();
+  assert.equal(
+    await guest
+      .getByLabel("Your existing display name")
+      .locator("option", { hasText: "Alex" })
+      .count(),
+    0,
+  );
   await guest
-    .getByText("Name or PIN not recognized.", { exact: false })
+    .getByText("No guests have joined yet.", { exact: true })
     .waitFor();
   await button(guest, "New guest").click();
-  await guest.getByLabel("Create a recovery PIN", { exact: true }).fill("5731");
+  await guest.getByLabel("Your name").fill("Alex");
   await openOptionalAvatar(guest);
   await guest.locator(".drawing-surface").click();
   await button(guest, "Take my seat").click();
@@ -152,7 +155,7 @@ try {
         checks: [
           "host removal button and cancel/confirm",
           "live host and guest count synchronization",
-          "removed seat loses token and PIN access",
+          "removed seat loses token and recovery access",
           "fresh seat does not restore old drafts",
           "mobile layout",
         ],

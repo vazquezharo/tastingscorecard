@@ -128,7 +128,21 @@ export type ParadeGuess = Pick<
   WineResult["guesses"][number],
   "name" | "emoji" | "avatar" | "avatarPhoto" | "guess" | "rating"
 >;
+export type RecoveryRequest = {
+  id: string;
+  participantId: string;
+  tokenHash: string;
+  status: "pending" | "approved" | "denied";
+  createdAt: number;
+  expiresAt: number;
+};
 export type Event = {
+  recoveryRequests?: RecoveryRequest[];
+  recoveryLinks?: {
+    participantId: string;
+    secretHash: string;
+    expiresAt: number;
+  }[];
   revealCountdown?: RevealCountdown;
   revealStage?: RevealStage;
   bottlePhotos?: Record<string, string>;
@@ -266,9 +280,14 @@ export type PublicEvent = {
     | "recoveryHash"
     | "recoveryFailures"
     | "recoveryBlockedUntil"
-  > & {
-    recoveryEnabled: boolean;
-  };
+  >;
+  recoveryRequests?: {
+    id: string;
+    participantId: string;
+    name: string;
+    createdAt: number;
+    expiresAt: number;
+  }[];
   roster?: HostParticipant[];
   key?: string[];
 };

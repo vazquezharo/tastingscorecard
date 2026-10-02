@@ -1,3 +1,4 @@
+import { approveSeatRecovery } from "./browser-helpers";
 import { chromium, request } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
@@ -37,7 +38,6 @@ try {
   p.on("pageerror", (e) => errors.push(e.message));
   await p.goto(`${origin}/e/${event.id}`);
   await p.getByLabel("Your name").fill("Drawing guest");
-  await p.getByLabel("Create a recovery PIN", { exact: true }).fill("4826");
   const join = p.getByRole("button", { name: "Take my seat", exact: true });
   assert.equal(await join.isDisabled(), false);
   await p.getByText("Add an avatar (optional)", { exact: true }).click();
@@ -120,11 +120,7 @@ try {
     .getByRole("button", { name: "Recover my seat", exact: true })
     .click();
   assert.equal(await recovered.locator(".drawing-surface").count(), 0);
-  await recovered.getByLabel("Your name").fill("Drawing guest");
-  await recovered.getByLabel("Your recovery PIN", { exact: true }).fill("4826");
-  await recovered
-    .getByRole("button", { name: "Recover scorecard", exact: true })
-    .click();
+  await approveSeatRecovery(recovered, api, origin, event.id, "Drawing guest");
   await recovered
     .locator(".event-line .avatar-icon polyline")
     .waitFor({ state: "attached" });
