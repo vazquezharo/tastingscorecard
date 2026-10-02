@@ -3357,3 +3357,53 @@ h3,
 .qr-panel img {
   margin: 0 auto;
 }
+
+/* Give the public tasting room breathing room, with the clock below the seats. */
+.event-display .display-room.display-tasting {
+  grid-template-rows: auto 1fr;
+  gap: clamp(16px, 2.5vh, 32px);
+}
+.event-display .display-room.display-tasting:has(.round-clock) {
+  grid-template-rows: auto 1fr auto;
+}
+.event-display .display-tasting .table-display {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.event-display .display-tasting .table-display h2 {
+  margin: 0 0 clamp(24px, 4vh, 48px);
+}
+.event-display .display-room.display-tasting .round-clock {
+  justify-content: center;
+  text-align: center;
+  padding: 12px 24px;
+  gap: 8px 24px;
+}
+.event-display .display-room.display-tasting .round-clock strong {
+  font-size: clamp(56px, 6.5vw, 104px);
+  line-height: 1;
+}
+.event-display .display-tasting .round-clock .eyebrow {
+  font-size: clamp(14px, 1.3vw, 22px);
+}
+@media (max-height: 800px) {
+  .event-display .display-room.display-tasting {
+    gap: 14px;
+  }
+  .event-display .display-tasting .table-display h2 {
+    margin-bottom: 24px;
+  }
+  .event-display .display-room.display-tasting .round-clock {
+    padding: 8px 20px;
+  }
+  .event-display .display-room.display-tasting .round-clock strong {
+    font-size: 64px;
+  }
+  .event-display
+    .display-tasting:has(.round-clock)
+    .table-rectangle.compact-seats {
+    grid-template-rows: auto 72px auto;
+  }
+}

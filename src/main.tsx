@@ -1505,8 +1505,7 @@ function EventDisplay({ id }: { id: string }) {
             <h1>
               {data.phase === "setup" ? (
                 <>
-                  Take your{" "}
-                  <em>seat.</em>
+                  Take your <em>seat.</em>
                 </>
               ) : (
                 <>
@@ -1524,8 +1523,8 @@ function EventDisplay({ id }: { id: string }) {
               />
             </div>
           )}
-          <RoundClock event={data} minimal />
           <TableDisplay event={data} readOnly />
+          <RoundClock event={data} minimal />
         </main>
       )}
     </div>
