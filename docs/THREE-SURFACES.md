@@ -81,3 +81,9 @@ The approved walnut tabletop is generated artwork (`src/assets/walnut-tabletop.p
 TypeScript, production build and all 44 server/unit tests pass. The new `tests/dynamic-table-browser.ts` checks 4, 6, 8, 12 and 20 fictional guests at 1920×1080, 1280×720 and 1024×768: no overlap/overflow/head seats, dynamic size changes, safe removal, read-only requests and refresh. Existing host-tools rehearsal checks 20 long names with the timer visible at the same sizes. All 18 existing browser scripts and the three-surface rehearsal pass. Physical TV/phone/iPad testing remains outstanding.
 
 The Event Display omits instructional paragraphs during joining and tasting. Readiness is shown as a short count (for example, **5 / 8 Ready**). The optional timer shows its value and paused/expired state without the longer guest/host guidance. Guest App and Host Console instructions remain unchanged.
+
+### Revisiting reveals
+
+After locking, the Host Console provides Previous reveal, Next reveal, and a Show on Event Display selector. The host can revisit any revealed wine or return to the current next wine's guesses; unseen future rounds remain unavailable. Browsing changes the persistent presentation pointer, never the revealed count, answer key, submission lock, scores or private notes. The Event Display follows automatically and refresh retains the selected wine. From the final summary, the host can revisit a wine and reopen the summary. Navigation waits for an active reveal countdown to finish.
+
+Verified with 48 server/unit tests and a local host, guest phone and Event Display rehearsal, including iPad portrait/landscape, previous/next/direct selection, summary return, refresh and unchanged locked scorecards.

@@ -1032,6 +1032,30 @@ export function createApp(store?: Store) {
         if (endsAt > Date.now())
           e.revealCountdown = { round: e.revealed, startsAt, endsAt };
         else delete e.revealCountdown;
+      } else if (action === "presentRound") {
+        assert(
+          e.phase === "locked" || e.phase === "summary",
+          423,
+          "Lock submissions before browsing reveals.",
+        );
+        assert(
+          !e.revealCountdown || e.revealCountdown.endsAt <= Date.now(),
+          409,
+          "Wait for the reveal countdown to finish.",
+        );
+        const round = req.body.round;
+        assert(
+          Number.isInteger(round) &&
+            round >= 1 &&
+            round <= Math.min(8, e.revealed + 1),
+          400,
+          "Choose an opened wine or the next round’s guesses.",
+        );
+        e.phase = "locked";
+        e.presenting = round;
+        delete e.revealCountdown;
+        if (round > e.revealed) e.revealStage = newRevealStage(e);
+        else delete e.revealStage;
       } else if (action === "next") {
         assert(
           !e.revealCountdown || e.revealCountdown.endsAt <= Date.now(),
@@ -1039,12 +1063,15 @@ export function createApp(store?: Store) {
           "Wait for the reveal countdown to finish.",
         );
         assert(
-          e.phase === "locked" && e.presenting === e.revealed && e.revealed < 8,
+          e.phase === "locked" &&
+            e.presenting <= e.revealed &&
+            e.presenting < 8,
           400,
           "Reveal this round first.",
         );
         e.presenting++;
-        e.revealStage = newRevealStage(e);
+        if (e.presenting > e.revealed) e.revealStage = newRevealStage(e);
+        else delete e.revealStage;
       } else if (action === "summary") {
         assert(
           !e.revealCountdown || e.revealCountdown.endsAt <= Date.now(),

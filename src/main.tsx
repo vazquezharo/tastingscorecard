@@ -2236,6 +2236,14 @@ function HostEvent({ id }: { id: string }) {
                     Reveal wine {data.presenting}
                   </button>
                 </>
+              ) : data.presenting < data.revealed ? (
+                <button
+                  className="primary"
+                  disabled={busy || !!error}
+                  onClick={() => void control("next")}
+                >
+                  Next revealed wine {data.presenting + 1}
+                </button>
               ) : data.revealed < 8 ? (
                 <button
                   className="primary"
@@ -2275,6 +2283,76 @@ function HostEvent({ id }: { id: string }) {
               )}
             </>
           )}
+          {(data.phase === "locked" || data.phase === "summary") &&
+            data.revealed > 0 && (
+              <div
+                className="host-reveal-navigation"
+                aria-label="Reveal navigation"
+              >
+                <button
+                  disabled={
+                    busy ||
+                    !!error ||
+                    !!data.revealCountdown ||
+                    (data.phase === "locked" && data.presenting <= 1)
+                  }
+                  onClick={() =>
+                    void control("presentRound", {
+                      round: data.phase === "summary" ? 8 : data.presenting - 1,
+                    })
+                  }
+                >
+                  Previous reveal
+                </button>
+                <label>
+                  Show on Event Display
+                  <select
+                    value={
+                      data.phase === "summary"
+                        ? "summary"
+                        : String(data.presenting)
+                    }
+                    disabled={busy || !!error || !!data.revealCountdown}
+                    onChange={(e) =>
+                      void (e.target.value === "summary"
+                        ? control("summary")
+                        : control("presentRound", {
+                            round: Number(e.target.value),
+                          }))
+                    }
+                  >
+                    {Array.from(
+                      { length: Math.min(8, data.revealed + 1) },
+                      (_, i) => (
+                        <option key={i} value={i + 1}>
+                          Wine {i + 1} ·{" "}
+                          {i + 1 <= data.revealed ? "Revealed" : "Guesses"}
+                        </option>
+                      ),
+                    )}
+                    {data.revealed === 8 && (
+                      <option value="summary">Final summary</option>
+                    )}
+                  </select>
+                </label>
+                <button
+                  disabled={
+                    busy ||
+                    !!error ||
+                    !!data.revealCountdown ||
+                    data.phase === "summary" ||
+                    data.presenting >= Math.min(8, data.revealed + 1)
+                  }
+                  onClick={() => void control("next")}
+                >
+                  Next reveal
+                </button>
+                <p className="small muted">
+                  Revisit any opened wine, then return to the next reveal. Saved
+                  answers and scores stay locked.
+                </p>
+              </div>
+            )}
         </section>
         <section className="panel host-secondary-panel">
           <div className="eyebrow">GUEST MANAGEMENT · PRIVATE</div>

@@ -3510,3 +3510,30 @@ h3,
     min-width: max(480px, calc(var(--max-side-seats) * 54px));
   }
 }
+
+.host-reveal-navigation {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.host-reveal-navigation button,
+.host-reveal-navigation select {
+  min-height: 48px;
+}
+.host-reveal-navigation p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .host-reveal-navigation {
+    grid-template-columns: 1fr 1fr;
+  }
+  .host-reveal-navigation label {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}

@@ -402,6 +402,90 @@ test("staged reveal persists and enforces secrecy through all eight rounds and e
     rmSync(dir, { recursive: true, force: true });
   }
 });
+test("host reveal navigation preserves opened answers, scorecards and the next unrevealed round", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "reveal-navigation-"));
+  process.env.SQLITE_PATH = join(dir, "events.sqlite");
+  process.env.HOST_PASSWORD = "local-navigation-test";
+  process.env.SESSION_SECRET =
+    "local-navigation-test-secret-more-than-thirty-two-characters";
+  const store = makeStore();
+  const e = {
+    ...fixture(),
+    phase: "locked" as const,
+    unlocked: 8,
+    revealed: 3,
+    presenting: 4,
+  };
+  await store.create(e);
+  const server = createApp(store).listen(0, "127.0.0.1");
+  await new Promise<void>((r) => server.once("listening", r));
+  const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const login = await fetch(origin + "/api/host/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: process.env.HOST_PASSWORD }),
+  });
+  const cookie = login.headers.get("set-cookie")!.split(";")[0];
+  const control = async (
+    action: string,
+    round?: number,
+    host = true,
+    revision?: number,
+  ) => {
+    const current = (await store.get(e.id))!;
+    return fetch(`${origin}/api/events/${e.id}/control`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(host ? { Cookie: cookie } : {}),
+      },
+      body: JSON.stringify({
+        action,
+        round,
+        revision: revision ?? current.controlRevision,
+      }),
+    });
+  };
+  try {
+    assert.equal((await control("presentRound", 1, false)).status, 401);
+    for (const round of [0, 5, 9, 1.5])
+      assert.equal((await control("presentRound", round)).status, 400);
+    assert.equal((await control("presentRound", 1)).status, 200);
+    let saved = (await store.get(e.id))!;
+    assert.equal(saved.presenting, 1);
+    assert.equal(saved.revealed, 3);
+    assert.deepEqual(saved.participants, e.participants);
+    assert.equal((await control("presentRound", 2, true, 0)).status, 409);
+    assert.equal((await control("next")).status, 200);
+    assert.equal((await store.get(e.id))!.presenting, 2);
+    assert.equal((await control("presentRound", 4)).status, 200);
+    saved = (await store.get(e.id))!;
+    assert.equal(publicEvent(saved).results[3].wine, undefined);
+    assert.equal(saved.revealStage!.round, 4);
+    assert.equal((await control("next")).status, 400);
+    await store.mutate(e.id, (state) => {
+      state.revealCountdown = { round: 4, endsAt: Date.now() + 60000 };
+    });
+    assert.equal((await control("presentRound", 1)).status, 409);
+    await store.mutate(e.id, (state) => {
+      delete state.revealCountdown;
+      state.phase = "summary";
+      state.revealed = 8;
+    });
+    assert.equal((await control("presentRound", 6)).status, 200);
+    assert.equal((await store.get(e.id))!.revealed, 8);
+    assert.equal((await control("summary")).status, 200);
+    assert.deepEqual((await store.get(e.id))!.participants, e.participants);
+    await store.mutate(e.id, (state) => {
+      state.phase = "tasting";
+    });
+    assert.equal((await control("presentRound", 1)).status, 423);
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+    await store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 test("wine ranks retain precision and ties; stats omit unreliable or absent ratings", () => {
   const e = fixture();
   e.phase = "summary";
