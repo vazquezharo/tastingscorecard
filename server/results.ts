@@ -10,7 +10,7 @@ import {
   type PublicEvent,
   type WineResult,
 } from "../src/shared.js";
-import { producers } from "./wines.js";
+import { producers, purchaseLink } from "./wines.js";
 function producerFor(e: Event, type: string) {
   return (
     e.wines?.find((w) => w.type === type)?.producer ?? producers[type] ?? ""
@@ -42,6 +42,13 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
     distribution[guess] = (distribution[guess] || 0) + 1;
   }
   const bottle = reveal ? tonightBottle(e, r) : undefined;
+  const retailerUrl =
+    reveal && e.phase === "summary" && e.revealed === 8
+      ? purchaseLink(
+          e.key[r - 1],
+          bottle?.producer ?? producerFor(e, e.key[r - 1]),
+        )
+      : undefined;
   return {
     round: r,
     distribution,
@@ -69,7 +76,9 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
           wine: e.key[r - 1],
           producer: bottle?.producer ?? producerFor(e, e.key[r - 1]),
           bottlePhoto: bottle?.image ?? e.bottlePhotos?.[e.key[r - 1]],
-          ...(bottle?.purchaseUrl ? { purchaseUrl: bottle.purchaseUrl } : {}),
+          ...(bottle?.purchaseUrl || retailerUrl
+            ? { purchaseUrl: bottle?.purchaseUrl ?? retailerUrl }
+            : {}),
           count: eligible.length,
           average: eligible.length ? total / 10 / eligible.length : null,
         }

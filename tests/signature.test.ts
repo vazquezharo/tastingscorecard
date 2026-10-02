@@ -6,6 +6,31 @@ import { join } from "node:path";
 import { createApp } from "../server/app.ts";
 import { makeStore } from "../server/store.ts";
 import { publicEvent, assistedEvent } from "../server/results.ts";
+
+test("host-supplied retailer links appear only after the full tasting and match the configured producer", () => {
+  const e = fixture();
+  assert.equal(JSON.stringify(publicEvent(e)).includes("totalwine.com"), false);
+  e.phase = "locked";
+  e.unlocked = 8;
+  e.revealed = 8;
+  assert.equal(JSON.stringify(publicEvent(e)).includes("totalwine.com"), false);
+  e.phase = "summary";
+  const results = publicEvent(e).results;
+  assert.equal(
+    results.filter((w) =>
+      w.purchaseUrl?.startsWith("https://www.totalwine.com/"),
+    ).length,
+    8,
+  );
+  assert.equal(new Set(results.map((w) => w.purchaseUrl)).size, 8);
+  e.key.reverse();
+  assert.equal(publicEvent(e).results[0].purchaseUrl, results[7].purchaseUrl);
+  e.wines = choices.map((type) => ({ type, producer: "Different bottle" }));
+  assert.equal(
+    publicEvent(e).results.some((w) => w.purchaseUrl),
+    false,
+  );
+});
 import { tonight, tonightBottle } from "../server/tonight-bottles.ts";
 import { choices, type Event } from "../src/shared.ts";
 import { eveningStats, wineRanks } from "../src/reveal-stats.ts";

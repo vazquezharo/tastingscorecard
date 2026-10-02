@@ -9,3 +9,29 @@ export const producers: Record<string, string> = {
   "Cabernet Sauvignon": "J. Lohr Seven Oaks",
   Merlot: "Kendall-Jackson Vintner’s Reserve",
 };
+
+// Exact links supplied by the host. Keep bottle identities out of browser bundles.
+const purchaseLinks: Record<string, string> = {
+  "Pinot Noir":
+    "https://www.totalwine.com/wine/red-wine/pinot-noir/st-francis-pinot-noir-sonoma-county/p/219691750",
+  Grenache:
+    "https://www.totalwine.com/wine/red-wine/grenache/halos-de-jupiter-grenache/p/2126221994",
+  "Rosso di Montepulciano":
+    "https://www.totalwine.com/wine/red-wine/sangiovese/redi-rosso-di-montepulciano/p/94524750",
+  Malbec:
+    "https://www.totalwine.com/wine/red-wine/malbec/ed-edmundo-malbec/p/235698750",
+  "Chianti Classico":
+    "https://www.totalwine.com/wine/red-wine/sangiovese/cantalici-chianti-classico-baruffo/p/234849750",
+  Tempranillo:
+    "https://www.totalwine.com/wine/red-wine/tempranillo/uro-toro-la-enfermera-tempranillo/p/178708750",
+  "Cabernet Sauvignon":
+    "https://www.totalwine.com/wine/red-wine/cabernet-sauvignon/j-lohr-estates-seven-oaks-cabernet-sauvignon/p/260750",
+  Merlot:
+    "https://www.totalwine.com/wine/red-wine/merlot/kendall-jackson-merlot/p/2400750",
+};
+
+export function purchaseLink(type: string, producer: string) {
+  return Object.hasOwn(producers, type) && producer === producers[type]
+    ? purchaseLinks[type]
+    : undefined;
+}
