@@ -1,4 +1,10 @@
 import {
+  BottlePhotos,
+  RevealCountdown,
+  TasteInsights,
+  EveningRecap,
+} from "./evening-tools";
+import {
   readLocal,
   writeLocal,
   removeLocal,
@@ -1293,6 +1299,13 @@ function RevealCard({ wine }: { wine: WineResult }) {
       {wine.wine ? (
         <div key={wine.wine} className="wine-revealed">
           <h1>{wine.wine}</h1>
+          {wine.bottlePhoto && (
+            <img
+              className="revealed-bottle"
+              src={wine.bottlePhoto}
+              alt={`${wine.wine} bottle`}
+            />
+          )}
           <p className="producer">{wine.producer}</p>
           <div className="average">
             <strong>{wine.average?.toFixed(1) ?? "—"}</strong>
@@ -1369,7 +1382,13 @@ function RevealCard({ wine }: { wine: WineResult }) {
     </section>
   );
 }
-function Summary({ event }: { event: PublicEvent }) {
+function Summary({
+  event,
+  interactive = true,
+}: {
+  event: PublicEvent;
+  interactive?: boolean;
+}) {
   const s = event.summary!;
   return (
     <section className="summary">
@@ -1377,6 +1396,8 @@ function Summary({ event }: { event: PublicEvent }) {
       <h1>
         A night to <em>remember.</em>
       </h1>
+      <TasteInsights event={event} />
+      {interactive && <EveningRecap event={event} />}
       <div className="summary-grid">
         <div className="panel">
           <h2>The leaderboard</h2>
@@ -1492,7 +1513,9 @@ function Results({
         </>
       )}
       {showSummary ? (
-        <Summary event={event} />
+        <Summary event={event} interactive={!projector} />
+      ) : event.revealCountdown && round === event.revealCountdown.round ? (
+        <RevealCountdown event={event} />
       ) : result ? (
         <RevealCard wine={result} />
       ) : (
@@ -1925,6 +1948,7 @@ function HostEvent({ id }: { id: string }) {
   const [key, setKey] = useState<string[]>(Array(8).fill("")),
     [actionError, setActionError] = useState(""),
     [busy, setBusy] = useState(false),
+    [theatrical, setTheatrical] = useState(false),
     [override, setOverride] = useState(false),
     [reset, setReset] = useState(false),
     [confirm, setConfirm] = useState(""),
@@ -2070,6 +2094,11 @@ function HostEvent({ id }: { id: string }) {
           </h2>
           {data.phase === "setup" ? (
             <>
+              <BottlePhotos
+                event={data}
+                disabled={busy || !!error}
+                onSaved={accept}
+              />
               <WineListEditor
                 event={data}
                 disabled={busy || !!error}
@@ -2241,14 +2270,28 @@ function HostEvent({ id }: { id: string }) {
                   ? "Guests can see the guesses. Make your reveal."
                   : "Wine revealed. Give the room a moment."}
               </p>
-              {data.presenting > data.revealed ? (
-                <button
-                  className="primary"
-                  disabled={busy || !!error}
-                  onClick={() => void control("reveal")}
-                >
-                  Reveal wine {data.presenting}
-                </button>
+              {data.revealCountdown ? (
+                <p role="status">Reveal countdown running…</p>
+              ) : data.presenting > data.revealed ? (
+                <>
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={theatrical}
+                      onChange={(e) => setTheatrical(e.target.checked)}
+                    />
+                    Three-second reveal countdown
+                  </label>
+                  <button
+                    className="primary"
+                    disabled={busy || !!error}
+                    onClick={() =>
+                      void control("reveal", { countdown: theatrical })
+                    }
+                  >
+                    Reveal wine {data.presenting}
+                  </button>
+                </>
               ) : data.revealed < 8 ? (
                 <button
                   className="primary"

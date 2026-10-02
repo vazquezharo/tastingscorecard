@@ -1,3 +1,4 @@
+import { normalizeBottlePhoto } from "./bottle-photo.js";
 import { normalizeAvatarPhoto } from "./avatar-photo.js";
 import { ownsSeat, validPin, pinHash, verifyPin } from "./identity.js";
 import { validAvatar } from "../src/shared.js";
@@ -62,7 +63,7 @@ export function createApp(store?: Store) {
   const standardJson = express.json({ limit: "16kb" });
   const avatarJson = express.json({ limit: "180kb" });
   app.use((req, res, next) =>
-    /\/api\/events\/[a-f0-9]{32}\/(join|avatar)$/.test(req.path)
+    /\/api\/events\/[a-f0-9]{32}\/(join|avatar|bottle)$/.test(req.path)
       ? avatarJson(req, res, next)
       : standardJson(req, res, next),
   );
@@ -553,6 +554,36 @@ export function createApp(store?: Store) {
     });
     res.json(publicEvent(await event(req), token));
   });
+  app.put(base + "/api/events/:id/bottle", host, async (req, res) => {
+    const photo = await normalizeBottlePhoto(req.body.photo).catch(
+      (err: Error) => {
+        throw new HttpError(400, err.message);
+      },
+    );
+    await db!.mutate(id(req), (e) => {
+      assert(
+        e.phase === "setup",
+        423,
+        "Bottle photos are frozen after starting.",
+      );
+      assert(
+        req.body.revision === (e.controlRevision ?? 0),
+        409,
+        "The event changed. Review the latest state and try again.",
+      );
+      assert(
+        typeof req.body.wine === "string" &&
+          eventChoices(e).includes(req.body.wine),
+        400,
+        "Choose a current wine type.",
+      );
+      e.bottlePhotos ??= {};
+      if (photo) e.bottlePhotos = { ...e.bottlePhotos, [req.body.wine]: photo };
+      else delete e.bottlePhotos[req.body.wine];
+      e.controlRevision = (e.controlRevision ?? 0) + 1;
+    });
+    res.json(publicEvent(await event(req), undefined, true));
+  });
   app.post(base + "/api/events/:id/control", host, async (req, res) => {
     let replacementPinHash: string | undefined;
     if (req.body.action === "resetPin") {
@@ -736,6 +767,12 @@ export function createApp(store?: Store) {
           "Use eight distinct wine types (up to 80 characters) and a producer for each (up to 120 characters).",
         );
         e.wines = clean;
+        if (e.bottlePhotos)
+          e.bottlePhotos = Object.fromEntries(
+            Object.entries(e.bottlePhotos).filter(([wine]) =>
+              eventChoices(e).includes(wine),
+            ),
+          );
         if (e.key.some((w) => !eventChoices(e).includes(w))) e.key = [];
       } else if (action === "key") {
         assert(
@@ -793,8 +830,22 @@ export function createApp(store?: Store) {
           400,
           "Select the next round before revealing.",
         );
+        assert(
+          req.body.countdown === undefined ||
+            typeof req.body.countdown === "boolean",
+          400,
+          "Choose whether to use a countdown.",
+        );
         e.revealed++;
+        if (req.body.countdown === true)
+          e.revealCountdown = { round: e.revealed, endsAt: Date.now() + 3000 };
+        else delete e.revealCountdown;
       } else if (action === "next") {
+        assert(
+          !e.revealCountdown || e.revealCountdown.endsAt <= Date.now(),
+          409,
+          "Wait for the reveal countdown to finish.",
+        );
         assert(
           e.phase === "locked" && e.presenting === e.revealed && e.revealed < 8,
           400,
@@ -802,6 +853,11 @@ export function createApp(store?: Store) {
         );
         e.presenting++;
       } else if (action === "summary") {
+        assert(
+          !e.revealCountdown || e.revealCountdown.endsAt <= Date.now(),
+          409,
+          "Wait for the reveal countdown to finish.",
+        );
         assert(
           e.phase === "locked" && e.revealed === 8,
           400,
@@ -835,6 +891,7 @@ export function createApp(store?: Store) {
           "Revealed events cannot be reset. Create a new event.",
         );
         delete e.roundTimer;
+        delete e.revealCountdown;
         e.generation = (e.generation ?? 0) + 1;
         e.phase = "setup";
         e.key = [];

@@ -66,6 +66,7 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
       ? {
           wine: e.key[r - 1],
           producer: producerFor(e, e.key[r - 1]),
+          bottlePhoto: e.bottlePhotos?.[e.key[r - 1]],
           count: eligible.length,
           average: eligible.length ? total / 10 / eligible.length : null,
         }
@@ -77,15 +78,24 @@ export function publicEvent(
   tokenHash?: string,
   host = false,
 ): PublicEvent {
+  const now = Date.now();
+  const pending =
+    e.revealCountdown && e.revealCountdown.endsAt > now
+      ? e.revealCountdown
+      : undefined;
+  const revealed = pending
+    ? Math.min(e.revealed, pending.round - 1)
+    : e.revealed;
   const out: PublicEvent = {
+    revealCountdown: pending,
     id: e.id,
-    serverTime: Date.now(),
+    serverTime: now,
     roundTimer: e.phase === "tasting" ? e.roundTimer : undefined,
     choices: eventChoices(e),
     name: e.name,
     phase: e.phase,
     unlocked: e.unlocked,
-    revealed: e.revealed,
+    revealed,
     presenting: e.presenting,
     revision: e.revision,
     generation: e.generation ?? 0,
@@ -120,6 +130,7 @@ export function publicEvent(
     out.me = { ...safe, recoveryEnabled: !!me.recoveryHash };
   }
   if (host) {
+    out.bottlePhotos = e.bottlePhotos;
     out.wines =
       e.wines ??
       eventChoices(e).map((type) => ({
@@ -144,10 +155,10 @@ export function publicEvent(
     }));
   }
   if (e.phase === "locked" || e.phase === "summary") {
-    out.results = Array.from({ length: e.revealed }, (_, i) =>
+    out.results = Array.from({ length: revealed }, (_, i) =>
       wineResult(e, i + 1, true),
     );
-    if (e.presenting > e.revealed)
+    if (e.presenting > revealed)
       out.results.push(wineResult(e, e.presenting, false));
   }
   if (e.phase === "summary") {

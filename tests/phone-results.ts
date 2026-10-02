@@ -319,7 +319,7 @@ try {
         .count(),
       1,
     );
-    assert.equal(await page.locator(".wine-row").count(), 8);
+    assert.equal(await page.locator(".summary-grid .wine-row").count(), 8);
     assert.deepEqual(await page.locator(".rank").allTextContents(), ["1", "1"]);
     assert.ok(
       (await page.locator(".leader-row").first().innerText()).includes("8"),

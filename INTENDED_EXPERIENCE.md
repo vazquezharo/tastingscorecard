@@ -45,3 +45,9 @@ Expired host sessions offer sign-in recovery without losing the event. Unavailab
 The optional host-controlled round timer appears on guest phones and the display. Start/restart, pause/resume and stop persist across refresh. Expiry is a prompt, never an automatic submit, lock or round advance. Opening the next round or locking clears it.
 
 The display offers Automatic, Table map and Compact seats. Crowded tables and smaller viewports use numbered compact cards that preserve seating order, avatars, full guest names and readiness. Browser preference persists; unassigned guests remain visible. Forced table view and very narrow screens may require scrolling.
+
+## The reveal and the keepsake
+
+The host can attach optional bottle photos during setup and choose a synchronized three-second countdown for each reveal. Unrevealed wine identities/photos remain server-private until the countdown deadline. Reduced motion disables animation. Countdown completion never opens the next round automatically.
+
+Final results include private personal favorites (including ties), saved rating range and comparisons against the group’s eligible submitted averages. A separate evening-recap preview downloads a polished PNG with the title, wines, producers, group averages/favorites and an opt-in named leaderboard. Notes and personal insights never enter the recap. The display stays focused on reveal/results rather than download controls.

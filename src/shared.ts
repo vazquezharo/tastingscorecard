@@ -102,7 +102,10 @@ export function timerRemaining(timer: RoundTimer, now: number) {
     timer.endsAt === undefined ? timer.remainingMs : timer.endsAt - now,
   );
 }
+export type RevealCountdown = { round: number; endsAt: number };
 export type Event = {
+  revealCountdown?: RevealCountdown;
+  bottlePhotos?: Record<string, string>;
   keyCorrections?: KeyCorrection[];
   roundTimer?: RoundTimer;
   seating?: Seating;
@@ -174,6 +177,7 @@ export type WineResult = {
   round: number;
   wine?: string;
   producer?: string;
+  bottlePhoto?: string;
   distribution: Record<string, number>;
   guesses: {
     name: string;
@@ -189,6 +193,8 @@ export type WineResult = {
   count?: number;
 };
 export type PublicEvent = {
+  revealCountdown?: RevealCountdown;
+  bottlePhotos?: Record<string, string>;
   keyCorrections?: KeyCorrection[];
   roundTimer?: RoundTimer;
   serverTime?: number;

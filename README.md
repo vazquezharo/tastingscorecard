@@ -186,3 +186,15 @@ npm run build
 # Isolated local server on port 3018, HOST_PASSWORD=local-rehearsal-only:
 node --import tsx tests/host-tools-browser.ts
 ```
+
+## Reveals, private taste insights and evening recap
+
+During setup, **Add bottle photos (optional)** attaches a JPEG/PNG/WebP photo to each wine type. Photos preserve their aspect ratio, are resized in the browser, validated and re-encoded on the server without metadata, and persist with the event. They freeze when tasting starts. Guests/display browsers receive a photo only after that wine’s reveal.
+
+Before each reveal, the host can enable **Three-second reveal countdown**. Its saved server deadline synchronizes phones and the display and survives refresh. The server withholds wine identity, producer, photo, correctness and ratings until the deadline. Next-round and summary controls remain blocked during the countdown. Existing immediate reveals are unchanged. Reduced-motion preferences remove the countdown animation; slow connections may show a waiting message until the confirmed reveal arrives.
+
+At final rankings, a registered guest sees **Your taste, by the glass**: all tied personal favorites, saved rating range and each rating’s comparison with the eligible group average. Draft ratings are identified as excluded from group averages. This private panel is absent from public/display views and the recap.
+
+**Take the evening home** creates a preview and downloads a PNG containing the event title, all eight wines/producers/group ratings and all tied group favorites. Guest names are excluded by default; the optional leaderboard includes names, shared ranks and incomplete-card labels. Private notes and personal insights are always excluded. Images are rendered locally without an external service. Actual image downloading/sharing in iPhone Safari, Android and in-app browsers still needs device rehearsal.
+
+Local feature browser rehearsal: `node --import tsx tests/evening-browser.ts` with the built app on port 3019 (or set `TEST_URL`). It creates isolated fictional events; do not point it at real production tastings.

@@ -2185,3 +2185,17 @@ h3,
     justify-self: start;
   }
 }
+
+.bottle-editor { margin-block: 18px; }
+.bottle-upload-row { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 12px 0; border-bottom: 1px solid #453339; }
+.bottle-upload-row label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.bottle-upload-row input { width: 100%; max-width: 100%; }
+.bottle-upload-row img { width: 64px; height: 86px; object-fit: contain; }
+.revealed-bottle { display: block; max-width: min(100%, 240px); max-height: 340px; object-fit: contain; margin: 20px auto; border-radius: 12px; }
+.reveal-countdown { text-align: center; padding: 48px 20px; }
+.reveal-countdown > strong { display: block; font-size: clamp(5rem, 15vw, 10rem); color: #d6ad69; animation: countdown-enter .4s ease-out; }
+@keyframes countdown-enter { from { opacity: .5; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .reveal-countdown > strong { animation: none; } }
+.taste-insights, .evening-recap { margin-block: 24px; overflow-wrap: anywhere; }
+.taste-insights .wine-row { flex-wrap: wrap; gap: 8px; }
+.recap-preview { display: block; width: 100%; max-width: 540px; height: auto; margin: 20px auto; border-radius: 8px; }
