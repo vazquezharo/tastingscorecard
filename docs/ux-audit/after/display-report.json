@@ -1,0 +1,12 @@
+{
+  "participants": 12,
+  "reducedMotion": true,
+  "noEligibleRatings": true,
+  "privateNotes": true,
+  "dimensions": {
+    "height": 1080,
+    "width": 1920,
+    "viewportHeight": 1080,
+    "viewportWidth": 1920
+  }
+}

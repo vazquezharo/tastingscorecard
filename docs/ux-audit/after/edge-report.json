@@ -1,0 +1,13 @@
+{
+  "blockedStorageJoin": true,
+  "backendConfirmedSave": true,
+  "noPrematureSaved": true,
+  "privateDraftSurvivesOverride": true,
+  "notesAndAnswersPrivate": true,
+  "expiredHostSessionRecovery": true,
+  "hostOfflineControlsDisabled": true,
+  "repeatedCreateOneRequest": true,
+  "genuineDoubleTextSize": true,
+  "keyboardAccess": true,
+  "pageErrors": []
+}

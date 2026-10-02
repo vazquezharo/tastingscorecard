@@ -1,0 +1,123 @@
+{
+  "screens": [
+    {
+      "name": "host-empty",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "host-setup-desktop",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "host-setup-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "join-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "recover-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "waiting-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "duplicate-name-error",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "blank-round-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "disconnected-phone",
+      "overflow": false
+    },
+    {
+      "name": "conflict-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "duplicate-round-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "earlier-round-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "submitted-to-draft-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "host-incomplete-desktop",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "host-incomplete-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "locked-guesses-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "revealed-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "revealed-display",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "summary-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "summary-host-desktop",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "browsing-phone",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "summary-320px",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "summary-text-200-percent",
+      "overflow": false,
+      "violations": []
+    }
+  ],
+  "errors": [],
+  "observations": {
+    "eventId": "0de936862d1abd88ce4150d46f81e25d",
+    "blankSaveState": "No entry yet"
+  }
+}
