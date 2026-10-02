@@ -245,6 +245,7 @@ try {
   await capture(host, "host-incomplete-phone");
   await host.setViewportSize({ width: 1280, height: 900 });
   await host.getByLabel("Lock anyway.", { exact: false }).check();
+  host.once("dialog", (d) => d.accept());
   await button(host, "Lock submissions & open results").click();
   await visible(guest, "Final Scorecard");
   await capture(guest, "locked-guesses-phone");

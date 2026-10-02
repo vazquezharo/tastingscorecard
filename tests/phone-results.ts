@@ -50,7 +50,7 @@ let displayRequests = 0;
 for (const page of [host, ...guests]) {
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (req) => {
-    if (req.url().includes("/projector/")) displayRequests++;
+    if (/\/(?:display|projector)\//.test(req.url())) displayRequests++;
   });
 }
 const visible = async (p: Page, text: string) =>
@@ -87,7 +87,7 @@ try {
   await host.waitForURL(/\/host\/e\//);
   const id = host.url().split("/").at(-1)!;
   await host
-    .getByRole("link", { name: "Open big-screen display", exact: true })
+    .getByRole("link", { name: "Open Event Display", exact: true })
     .waitFor({ timeout: 15000 });
   for (const [i, page] of guests.entries()) {
     await page.goto(`${origin}/e/${id}`);
@@ -190,6 +190,7 @@ try {
     await visible(page, "Scorecard submitted");
   }
   await visible(host, "Every guest has submitted a valid scorecard.");
+  host.once("dialog", (d) => d.accept());
   await button(host, "Lock submissions & open results").click();
   for (const page of guests) {
     await visible(page, "Final Scorecard");

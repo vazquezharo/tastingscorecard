@@ -134,7 +134,7 @@ try {
   // Correct display route is discovered from the host link below if needed.
   if (!(await display.locator(".table-display").count())) {
     const href = await host
-      .getByRole("link", { name: "Open big-screen display" })
+      .getByRole("link", { name: "Open Event Display" })
       .getAttribute("href");
     await display.goto(origin + href);
   }

@@ -2976,3 +2976,237 @@ h3,
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* Three surfaces: public Guest App/Event Display and private iPad Host Console. */
+.host-state-overview {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  background: var(--panel);
+}
+.host-state-overview span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+}
+.host-state-overview strong {
+  display: block;
+  font-size: clamp(20px, 2.3vw, 30px);
+}
+.host-console button,
+.host-console .button,
+.host-console summary,
+.host-console select {
+  min-height: 48px;
+}
+.host-active-panel > .primary {
+  width: 100%;
+  min-height: 60px;
+  font-size: 22px;
+}
+.host-console .event-administration {
+  margin-top: 20px;
+}
+.event-administration > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--gold);
+  font-size: 20px;
+}
+.event-administration[open] > summary {
+  margin-bottom: 18px;
+}
+.host-phase-tasting .large-round {
+  font-size: 64px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.host-phase-tasting .host-active-panel h2 {
+  margin-bottom: 14px;
+}
+.host-phase-tasting .host-active-panel p {
+  margin-bottom: 10px;
+}
+.host-secondary-panel .host-qr {
+  max-width: 130px;
+}
+.event-display .display-room {
+  max-width: 1920px;
+  gap: 20px;
+  padding: 24px 4%;
+  min-height: calc(100dvh - 95px);
+  grid-template-columns: 1fr 240px;
+}
+.event-display .display-room h1 {
+  font-size: clamp(40px, 5vw, 88px);
+  margin: 10px 0;
+}
+.event-display .display-room > div:first-child > p {
+  font-size: clamp(20px, 1.7vw, 32px);
+  max-width: 1000px;
+}
+.event-display .qr-panel {
+  padding: 12px;
+}
+.event-display .qr-panel img {
+  width: 150px;
+  height: 150px;
+}
+.event-display .qr-panel h2 {
+  font-size: 22px;
+  margin: 8px 0;
+}
+.event-display .qr-panel p {
+  font-size: 16px;
+  margin: 8px 0;
+}
+.event-display .display-tasting {
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+.event-display .table-display {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+.event-display .table-display h2 {
+  font-size: clamp(22px, 2vw, 36px);
+  margin-bottom: 8px;
+}
+.event-display .display-room .unseated-guests ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.event-display .unseated-guests li {
+  font-size: clamp(18px, 1.3vw, 26px);
+  min-width: 0;
+}
+.event-display .unseated-guests strong {
+  overflow-wrap: anywhere;
+}
+.event-display .round-clock {
+  margin: 0;
+}
+@media (min-width: 700px) and (max-width: 1400px) {
+  .host-console {
+    padding: 20px 3%;
+  }
+  .host-console .host-heading {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .host-console .host-heading h1 {
+    font-size: 32px;
+    margin: 8px 0;
+  }
+  .host-console .host-links {
+    gap: 8px;
+  }
+  .host-console .host-links .button,
+  .host-console .host-links button {
+    font-size: 15px;
+    padding: 10px 14px;
+  }
+  .host-console .host-grid {
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+  }
+  .host-console .panel {
+    padding: 18px;
+  }
+  .host-secondary-panel .roster {
+    max-height: 35vh;
+    overflow-y: auto;
+  }
+}
+@media (max-width: 850px) {
+  .host-state-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .host-console .host-grid {
+    grid-template-columns: 1fr;
+  }
+  .host-console .host-links {
+    flex-wrap: wrap;
+  }
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .event-display .display-room {
+    padding: 16px 3%;
+    gap: 12px;
+  }
+  .event-display .display-room h1 {
+    font-size: 44px;
+  }
+  .event-display .display-room > div:first-child > p {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .event-display .table-display > p {
+    font-size: 15px;
+    margin: 6px 0;
+  }
+  .event-display .unseated-guests h3 {
+    margin: 6px 0;
+  }
+  .event-display .unseated-guests li {
+    padding: 10px;
+    font-size: 18px;
+  }
+}
+.event-display .display-room > div:first-child > p {
+  display: block;
+}
+@media (min-width: 700px) and (max-width: 1400px) {
+  body:has(.host-console) > #root > header {
+    height: 64px;
+  }
+  .host-phase-tasting .host-active-panel > .large-round {
+    display: none;
+  }
+  .host-phase-tasting .host-active-panel > h2 {
+    font-size: 26px;
+  }
+}
+@media (min-width: 700px) and (max-width: 1400px) {
+  .host-phase-tasting .host-active-panel > h2,
+  .host-phase-tasting .host-active-panel > .eyebrow,
+  .host-phase-tasting .host-active-panel > p.muted {
+    display: none;
+  }
+  .host-phase-tasting .host-readiness {
+    padding: 12px;
+  }
+  .host-phase-tasting .host-readiness p[role="status"] {
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .host-phase-tasting .round-clock {
+    padding: 12px;
+  }
+}
+.event-display .display-setup .qr-panel {
+  width: 220px;
+  max-width: 100%;
+}
+.event-display .display-setup .qr-panel h2,
+.event-display .display-setup .qr-panel p {
+  display: block;
+}
+.event-display header {
+  height: 64px;
+}
+.event-display .display-room {
+  min-height: calc(100dvh - 64px);
+}
+@media (min-width: 901px) and (max-width: 1200px) and (max-height: 800px) {
+  .event-display .display-room:has(.compact-seats) h1 {
+    font-size: 36px;
+    margin: 6px 0;
+  }
+}

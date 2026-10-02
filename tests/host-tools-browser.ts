@@ -72,6 +72,7 @@ try {
   const entry = before.roster[0].entries[1];
   await display.goto(origin + "/projector/e/" + id);
   // Correct swapped bottles through the host UI, with explicit review and confirmation.
+  await host.getByText("Event administration", { exact: true }).click();
   await host.getByText("Correct pouring order", { exact: true }).click();
   const correction = host.locator(".pouring-correction");
   await correction
@@ -100,6 +101,12 @@ try {
   ).toBeVisible();
   assert.deepEqual((await read()).roster[0].entries[1], entry);
   await host.reload();
+  if (
+    !(await host
+      .locator(".event-administration")
+      .evaluate((el) => (el as HTMLDetailsElement).open))
+  )
+    await host.getByText("Event administration", { exact: true }).click();
   await host
     .getByText("Pouring-order correction history", { exact: true })
     .click();
@@ -227,13 +234,9 @@ try {
       });
     }
   }
-  await display.getByLabel("Display layout").selectOption("table");
-  await expect(display.locator(".compact-seats")).toHaveCount(0);
-  await display.getByLabel("Display layout").selectOption("compact");
+  await expect(display.locator("button, select, input")).toHaveCount(0);
   await display.reload();
-  await expect(display.getByLabel("Display layout")).toHaveValue("compact");
   await expect(display.locator(".compact-seats")).toBeVisible();
-  await display.getByLabel("Display layout").selectOption("auto");
   // Real timer expiry leaves the saved event and editable scorecard unchanged.
   await expect(guest.getByRole("timer")).toHaveText("0:00", { timeout: 35000 });
   await expect(guest.locator(".round-clock")).toContainText("Time’s up");
@@ -272,7 +275,7 @@ try {
   await expect(display.locator(".table-map")).toHaveCount(0);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: confirmed private correction/history, PIN reset and same-seat browser recovery, persistent synchronized timer/real expiry, 20 long-name guests in three shapes at 1920×1080/1280×720/1024×768, layout preference, no seat overlap or overflow, accessibility, corrected reveal and lock compatibility.",
+    "PASS: confirmed private correction/history, PIN reset and same-seat browser recovery, persistent synchronized timer/real expiry, 20 long-name guests in three shapes at 1920×1080/1280×720/1024×768, automatic read-only layout, no seat overlap or overflow, accessibility, corrected reveal and lock compatibility.",
   );
 } finally {
   await browser.close();

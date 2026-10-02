@@ -45,7 +45,7 @@ import "@fontsource/playfair-display/400.css";
 import "@fontsource/playfair-display/400-italic.css";
 import "./style.css";
 const link = (s: string) => base + s;
-function Header({ mode = "Private tasting" }: { mode?: string }) {
+function Header({ mode = "Guest App" }: { mode?: string }) {
   return (
     <header>
       <a href={link("/")} className="brand">
@@ -1233,7 +1233,7 @@ function LockedDrafts({ event }: { event: PublicEvent }) {
     </div>
   ) : null;
 }
-function Guest({ id }: { id: string }) {
+function GuestApp({ id }: { id: string }) {
   const { data, error, accept, refresh } = useEvent(id);
   const resultsOpen = data?.phase === "locked" || data?.phase === "summary";
   useEffect(() => {
@@ -1244,10 +1244,10 @@ function Guest({ id }: { id: string }) {
       <Header
         mode={
           resultsOpen && data?.me
-            ? "Final scorecard"
+            ? "Guest App · Final Scorecard"
             : resultsOpen
-              ? "Tasting results"
-              : "Guest scorecard"
+              ? "Guest App · Results"
+              : "Guest App"
         }
       />
       {error && (
@@ -1551,11 +1551,13 @@ function Results({
   );
 }
 
-function Projector({ id }: { id: string }) {
+function EventDisplay({ id }: { id: string }) {
   const { data, error } = useEvent(id, false, true);
   return (
-    <div className={`projector${data?.phase === "locked" || data?.phase === "summary" ? " signature-projector" : ""}`}>
-      <Header mode="At the table" />
+    <div
+      className={`projector event-display${data?.phase === "locked" || data?.phase === "summary" ? " signature-projector" : ""}`}
+    >
+      <Header mode="Event Display" />
       {error && (
         <div className="narrow">
           <ErrorBox
@@ -1568,9 +1570,11 @@ function Projector({ id }: { id: string }) {
       ) : data.phase === "locked" || data.phase === "summary" ? (
         <RevealDisplay event={data} />
       ) : (
-        <main className="projector-lobby seating-lobby">
+        <main
+          className={`projector-lobby seating-lobby display-room display-${data.phase}`}
+        >
           <div>
-            <div className="eyebrow">{data.name}</div>
+            <div className="eyebrow">Blind Wine Tasting · {data.name}</div>
             <h1>
               {data.phase === "setup" ? (
                 <>
@@ -1587,31 +1591,31 @@ function Projector({ id }: { id: string }) {
             </h1>
             <p className="muted">
               {data.phase === "setup"
-                ? "Scan to join the tasting."
-                : "Taste, take a guess, make a note."}
+                ? "Open the tasting link from the group chat."
+                : "Record your answers on your phone. Ready means saved; you can still edit."}
             </p>
           </div>
-          <div className="qr-panel">
-            <img
-              src={link(`/api/events/${id}/qr`)}
-              alt="QR code to join the tasting"
-            />
-            <h2>Join the tasting</h2>
-            <p>
-              Open your camera.
-              <br />
-              Scan. Enter your name.
-            </p>
-            <a href={link(`/e/${id}`)}>
-              <span className="display-link-full">
-                {location.host}
-                {link(`/e/${id}`)}
-              </span>
-              <span className="display-link-short">Join tasting</span>
-            </a>
-          </div>
+          {data.phase === "setup" && (
+            <div className="qr-panel">
+              <img
+                src={link(`/api/events/${id}/qr`)}
+                alt="QR code to join the tasting"
+              />
+              <h2>Or scan to join</h2>
+              <p>
+                The group-chat link works too. Enter your name and recovery PIN.
+              </p>
+              <a href={link(`/e/${id}`)}>
+                <span className="display-link-full">
+                  {location.host}
+                  {link(`/e/${id}`)}
+                </span>
+                <span className="display-link-short">Join tasting</span>
+              </a>
+            </div>
+          )}
           <RoundClock event={data} />
-          <TableDisplay event={data} />
+          <TableDisplay event={data} readOnly />
         </main>
       )}
     </div>
@@ -1624,7 +1628,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
   return (
     <main className="narrow join">
       <div className="eyebrow">BEHIND THE BAR</div>
-      <h1>Host’s table.</h1>
+      <h1>Host Console</h1>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -1656,7 +1660,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
     </main>
   );
 }
-function Host() {
+function HostConsole() {
   const [events, setEvents] = useState<PublicEvent[]>([]),
     [authenticated, setAuthenticated] = useState<boolean | null>(null),
     [name, setName] = useState(""),
@@ -1681,7 +1685,7 @@ function Host() {
     .match(/^\/host\/e\/([a-f0-9]{32})$/)?.[1];
   return (
     <>
-      <Header mode="Host controls" />
+      <Header mode="Host Console" />
       {error && (
         <div className="narrow">
           <ErrorBox message={error} />
@@ -1996,6 +2000,18 @@ function HostEvent({ id }: { id: string }) {
   ) => {
     if (!data) return false;
     if (busy || error) return false;
+    if (
+      action === "lock" &&
+      !window.confirm(
+        `Lock submissions for ${data.name}? ${data.completed} of ${data.participants} guests have submitted valid scorecards. Editing ends immediately. ${
+          data.roster
+            ?.filter((p) => !p.submitted || !p.valid)
+            .map((p) => p.name)
+            .join(", ") || "No incomplete cards."
+        } Pending saves on guest devices cannot be detected; ask everyone to wait for Saved. Continue?`,
+      )
+    )
+      return false;
     setBusy(true);
     setActionError("");
     try {
@@ -2037,13 +2053,13 @@ function HostEvent({ id }: { id: string }) {
   if (!data)
     return (
       <main className="narrow">
-        {error ? <ErrorBox message={error} /> : "Loading host table…"}
+        {error ? <ErrorBox message={error} /> : "Loading Host Console…"}
       </main>
     );
   const affected = data.roster?.filter((p) => !p.submitted || !p.valid) || [];
   const guestSheet = data.roster?.find((p) => p.id === selectedGuest);
   return (
-    <main className="host-main">
+    <main className={`host-main host-console host-phase-${data.phase}`}>
       {guestSheet && (
         <HostGuestSheet
           key={guestSheet.id}
@@ -2075,9 +2091,9 @@ function HostEvent({ id }: { id: string }) {
             className="button"
             target="_blank"
             rel="noreferrer"
-            href={link(`/projector/e/${id}`)}
+            href={link(`/display/e/${id}`)}
           >
-            Open big-screen display
+            Open Event Display
           </a>
           <a
             className="button"
@@ -2103,9 +2119,41 @@ function HostEvent({ id }: { id: string }) {
         </div>
       </div>
       {(error || actionError) && <ErrorBox message={actionError || error} />}
+      <section className="host-state-overview" aria-label="Event state">
+        <div>
+          <span>Current state</span>
+          <strong>
+            {data.phase === "tasting"
+              ? `Round ${data.unlocked} of 8`
+              : data.phase === "locked"
+                ? `Reveal wine ${data.presenting} of 8`
+                : data.phase === "summary"
+                  ? "Final Summary"
+                  : "Waiting to start"}
+          </strong>
+        </div>
+        <div>
+          <span>Guests</span>
+          <strong>{data.participants}</strong>
+        </div>
+        <div>
+          <span>Ready</span>
+          <strong>
+            {data.phase === "tasting"
+              ? data.tableGuests.filter((p) => p.ready).length
+              : "—"}
+          </strong>
+        </div>
+        <div>
+          <span>Submitted</span>
+          <strong>
+            {data.completed} / {data.participants}
+          </strong>
+        </div>
+      </section>
       <div className="host-grid">
-        <section className="panel">
-          <div className="eyebrow">RUN THE EVENING</div>
+        <section className="panel host-active-panel">
+          <div className="eyebrow">NEXT ACTION</div>
           {busy && (
             <p role="status" className="small">
               Updating event…
@@ -2243,11 +2291,7 @@ function HostEvent({ id }: { id: string }) {
                 </section>
               )}
               <RoundClock event={data} />
-              <TimerControls
-                event={data}
-                disabled={busy || !!error}
-                control={control}
-              />
+
               {data.unlocked < 8 ? (
                 <button
                   className="primary"
@@ -2258,7 +2302,15 @@ function HostEvent({ id }: { id: string }) {
                 </button>
               ) : (
                 <>
-                  <h3>Before locking</h3>
+                  <h3>
+                    Before locking · {data.completed} / {data.participants}{" "}
+                    submitted
+                  </h3>
+                  <p className="small muted">
+                    Pending saves on guest devices cannot be detected. Ask
+                    guests to wait for Saved and submit their reviewed
+                    scorecard.
+                  </p>
                   {affected.length ? (
                     <div className="warning">
                       {affected.map((p) => (
@@ -2350,50 +2402,9 @@ function HostEvent({ id }: { id: string }) {
           ) : (
             <p>Results are saved. The event link stays open for revisits.</p>
           )}
-          {(data.phase === "locked" || data.phase === "summary") && (
-            <a className="button" href={link(`/api/events/${id}/export`)}>
-              Download CSV
-            </a>
-          )}
-          {(data.phase === "tasting" || data.phase === "locked") &&
-            data.revealed === 0 && (
-              <PouringCorrection
-                event={data}
-                disabled={busy || !!error}
-                control={control}
-              />
-            )}
-          <CorrectionHistory event={data} />
-          {data.phase !== "setup" && data.revealed === 0 && (
-            <details
-              open={reset}
-              onToggle={(e) => setReset(e.currentTarget.open)}
-              className="reset"
-            >
-              <summary>Reset this tasting</summary>
-              <p className="warning">
-                This clears all scorecards and the answer key. Guest seats are
-                kept. This cannot be undone.
-              </p>
-              <label htmlFor="reset-confirm">
-                Type “{data.name}” to confirm
-              </label>
-              <input
-                id="reset-confirm"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-              />
-              <button
-                disabled={busy || !!error || confirm !== data.name}
-                onClick={() => void control("reset", { confirm })}
-              >
-                Clear & return to setup
-              </button>
-            </details>
-          )}
         </section>
-        <section className="panel">
-          <div className="eyebrow">AT THE TABLE</div>
+        <section className="panel host-secondary-panel">
+          <div className="eyebrow">GUEST MANAGEMENT · PRIVATE</div>
           <div className="host-counts">
             <strong>
               {data.participants}
@@ -2461,8 +2472,16 @@ function HostEvent({ id }: { id: string }) {
             </div>
           ) : (
             <p className="muted">
-              Share the invitation or put the QR code on the projector.
+              Share the Guest App invitation; Event Display also offers an
+              optional QR code.
             </p>
+          )}
+          {data.phase === "tasting" && (
+            <TimerControls
+              event={data}
+              disabled={busy || !!error}
+              control={control}
+            />
           )}
           <SeatingEditor
             event={data}
@@ -2477,11 +2496,53 @@ function HostEvent({ id }: { id: string }) {
             alt="Guest join QR code"
           />
           <p className="small muted">
-            Phones and the optional display update automatically. Notes stay
+            Guest App and Event Display update automatically. Notes stay
             private.
           </p>
         </section>
       </div>
+      <details className="panel event-administration">
+        <summary>Event administration</summary>
+        {(data.phase === "locked" || data.phase === "summary") && (
+          <a className="button" href={link(`/api/events/${id}/export`)}>
+            Download CSV
+          </a>
+        )}
+        {(data.phase === "tasting" || data.phase === "locked") &&
+          data.revealed === 0 && (
+            <PouringCorrection
+              event={data}
+              disabled={busy || !!error}
+              control={control}
+            />
+          )}
+        <CorrectionHistory event={data} />
+        {data.phase !== "setup" && data.revealed === 0 && (
+          <details
+            open={reset}
+            onToggle={(e) => setReset(e.currentTarget.open)}
+            className="reset"
+          >
+            <summary>Reset this tasting</summary>
+            <p className="warning">
+              This clears all scorecards and the answer key. Guest seats are
+              kept. This cannot be undone.
+            </p>
+            <label htmlFor="reset-confirm">Type “{data.name}” to confirm</label>
+            <input
+              id="reset-confirm"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
+            <button
+              disabled={busy || !!error || confirm !== data.name}
+              onClick={() => void control("reset", { confirm })}
+            >
+              Clear & return to setup
+            </button>
+          </details>
+        )}
+      </details>
       {(data.phase === "locked" || data.phase === "summary") && (
         <Results event={data} />
       )}
@@ -2494,15 +2555,15 @@ function App() {
   if (assistedId)
     return (
       <>
-        <Header mode="Assisted entry" />
+        <Header mode="Host Console · Assisted entry" />
         <AssistedEntry id={assistedId} />
       </>
     );
-  if (path.startsWith("/host")) return <Host />;
-  let id = path.match(/^\/projector\/e\/([a-f0-9]{32})\/?$/)?.[1];
-  if (id) return <Projector id={id} />;
+  if (path.startsWith("/host")) return <HostConsole />;
+  let id = path.match(/^\/(?:display|projector)\/e\/([a-f0-9]{32})\/?$/)?.[1];
+  if (id) return <EventDisplay id={id} />;
   id = path.match(/^\/e\/([a-f0-9]{32})\/?$/)?.[1];
-  return id ? <Guest id={id} /> : <Home />;
+  return id ? <GuestApp id={id} /> : <Home />;
 }
 class Boundary extends React.Component<
   { children: React.ReactNode },

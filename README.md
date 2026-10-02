@@ -18,7 +18,7 @@ node scripts/local-setup.mjs
 node --env-file=.env --import tsx server/index.ts
 ```
 
-Open `http://localhost:3000/host`. Read `HOST_PASSWORD` in your local `.env` to sign in. Create an event, privately assign all eight wine types to the actual pouring order, save the key and share the guest link. No TV or projector is required; the host’s “Open big-screen display” link opens an optional presentation window. The setup script preserves any existing `.env`; `.env.example` documents every setting. No answer order is preassigned in a new event.
+Open `http://localhost:3000/host`. Read `HOST_PASSWORD` in your local `.env` to sign in. Create an event, privately assign all eight wine types to the actual pouring order, save the key and share the guest link. No TV or projector is required; the host’s “Open Event Display” link opens an optional presentation window. The setup script preserves any existing `.env`; `.env.example` documents every setting. No answer order is preassigned in a new event.
 
 Without server secrets, the UI shows a configuration error. Production also requires `DATABASE_URL` and will never silently use local SQLite.
 
@@ -145,7 +145,7 @@ Click a guest in **At the table** to open their read-only scorecard. Confirmed g
 
 In the host's **At the table** panel, open **Arrange table**, choose round, square, or rectangular, select 2–20 seats, and assign each guest once. Click **Save seating**. Reducing occupied seats asks for confirmation; removing a guest leaves their seat empty. Saved seating survives restarts and the existing reset retains the seating arrangement.
 
-**Open big-screen display** shows the saved layout during setup/tasting, including avatars, names and current-round **Ready / Waiting** status. Ready means an allowed wine-type guess and valid rating have been confirmed saved; notes and final scorecard submission are not required for that round. Guests remain editable until the normal event lock, and clearing an answer returns them to Waiting. Unassigned guests remain visible below the table. No guesses, ratings, correctness, notes, or producers are included in the readiness data. Locking switches to the usual host-controlled results. A display remains optional.
+**Open Event Display** shows the saved layout during setup/tasting, including avatars, names and current-round **Ready / Waiting** status. Ready means an allowed wine-type guess and valid rating have been confirmed saved; notes and final scorecard submission are not required for that round. Guests remain editable until the normal event lock, and clearing an answer returns them to Waiting. Unassigned guests remain visible below the table. No guesses, ratings, correctness, notes, or producers are included in the readiness data. Locking switches to the usual host-controlled results. A display remains optional.
 
 The display offers Automatic, Table map and Compact seats layouts. Automatic switches crowded tables or smaller screens to numbered cards; explicit Table map can still require scrolling. Browser checks do not substitute for a rehearsal on the actual TV and phones.
 
@@ -213,3 +213,7 @@ Local verification: `npm test`, `npm run build`, and `TEST_URL=http://127.0.0.1:
 ## Signature end-of-tasting reveal
 
 The display now uses a saved, staged guest guess parade followed by the optional three-second countdown and bottle-centered reveal. Phones keep their personal scorecards with progressively revealed bottle details and exact supplied retailer links. Champion/wine-ranking results appear only after the host opens Final Summary. See [signature reveal, verification and tonight checklist](docs/SIGNATURE-REVEAL.md). Tonight-specific configuration is inactive until the actual event and eight exact bottles are supplied.
+
+## Three application surfaces
+
+Guest App: `/e/<EVENT_ID>`. Private iPad-first Host Console: `/host`, then `/host/e/<EVENT_ID>`. Read-only laptop/TV Event Display: `/display/e/<EVENT_ID>` (legacy `/projector/e/<EVENT_ID>` stays valid). Use the host’s **Open Event Display** link in a dedicated laptop window; never project Host Console. QR is optional. See [changes, verification and tonight setup](docs/THREE-SURFACES.md).

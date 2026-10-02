@@ -19,15 +19,15 @@ The experience should support:
 - Fair scoring and wine rankings based on eligible submitted ratings.
 - Personal reflections and a shareable keepsake after the tasting.
 
-Guest phones are the primary devices. The host can use a phone or laptop. A TV/projector is optional; the entire event should work without one. The tasting app operates separately from the main website.
+The Guest App runs primarily on phones. The private Host Console is optimized for an iPad in portrait or landscape. The optional read-only Event Display runs in its own laptop/TV browser window; it is never a mirrored Host Console. The entire event still works without a TV. The tasting app operates separately from the main website.
 
 ## 2. Roles and Visibility
 
 | Role | Expected access |
 |---|---|
-| Guest | Join or recover their seat, edit their own unlocked scorecard, view opened results, and see their own final taste insights. |
-| Host | Create and configure events, manage guests and seating, control rounds and reveals, inspect saved guest scorecards, and export results. |
-| Optional display | Show the invitation, table/readiness, and opened reveals/results. It does not control the event. |
+| Guest App | Join or recover their seat, edit their own unlocked scorecard, view opened results, and see their own final taste insights. |
+| Host Console | Create and configure events, manage guests and seating, control rounds and reveals, inspect saved guest scorecards, and export results. |
+| Event Display | Show the invitation, table/readiness, and opened reveals/results. It does not control the event. |
 
 An event link is a private invitation rather than an account-based access boundary. Anyone given that link can access its public views and, while registration is open, join. Host operations require server-validated host authentication.
 
@@ -116,7 +116,7 @@ The host sees the current round’s ready count and waiting guest names.
 
 The host can arrange a round, square, or rectangular table with 2–20 seats. Each guest can be assigned once. Seating persists; unassigned guests remain visible, and removing a guest clears their assignment.
 
-During tasting, the optional display shows guest names, avatars, seating, and Ready/Waiting status. Its readiness data excludes guesses, ratings, notes, correctness, and producers. Automatic, Table map, and Compact seats layouts are available. Display layout preference is stored in that display browser.
+During tasting, the optional display shows guest names, avatars, seating, and Ready/Waiting status. Its readiness data excludes guesses, ratings, notes, correctness, and producers. Event Display automatically adapts the table layout to the viewport, seat count and timer, without on-screen controls. Existing seating remains host-configured and persistent.
 
 An optional round timer supports start/restart, pause/resume, and stop, with durations from 30 seconds to 60 minutes. It appears on host, guest, and display screens and persists through refresh. Expiry is only a prompt: it never submits, locks, or advances a round. Advancing the tasting round or locking clears it.
 
@@ -132,7 +132,7 @@ Final submission requires:
 
 A submitted card remains editable until the host locks. Valid edits retain submission; invalid edits return the card to draft status and require correction and resubmission.
 
-The host must unlock all eight rounds before locking. Missing, invalid, and unsubmitted cards are named in warnings. A deliberate host override can lock despite those warnings.
+Host Console shows current round, total guests, Ready/Waiting names, submitted count and live timer separately from administration. Touch controls are at least 48px; the next action is prominent. The host must unlock all eight rounds before locking. Missing, invalid, and unsubmitted cards are named in warnings. A deliberate host override can lock despite those warnings. The UI also requires explicit confirmation before locking, including counts and that edits end immediately. Pending saves on other devices cannot be detected; the host must ask guests to wait for Saved.
 
 Locking stops scorecard and avatar edits on the server and automatically moves recognized guests to their read-only Final Scorecard. All eight rounds show saved guesses, ratings, status, and expandable private notes. Unsaved local drafts do not become official answers at lock; a private panel on the original device allows the guest to inspect them.
 
@@ -221,3 +221,7 @@ The staged reveal build passed 37 server/unit tests, feature browser rehearsals,
 Physical iPhone/Android/TV testing, actual camera/file picking, in-app browser downloads, and a full room of simultaneous production users remain unverified. Automated accessibility checks passed for tested screens, but do not establish comprehensive accessibility certification.
 
 Tonight’s practical operating expectations: use a regular phone browser, remember the recovery PIN, wait for Saved, distinguish round readiness from final submission, verify the physical pouring order, and resolve submission warnings before locking.
+
+## 16. Three application surfaces
+
+Canonical Event Display: `https://tasting.haroldvazquez.com/display/e/<EVENT_ID>`; legacy `/projector/e/<EVENT_ID>` remains an alias. Host Console links open the canonical route. Waiting screens emphasize the group-chat invitation with QR as an alternate option and registered avatars/initials. Tasting screens show only round/event/timer/readiness; no hints, guesses, ratings or results. The display contains no controls and opening/refresh/reconnect/close makes no mutation. See [three-surface changes and tonight setup](THREE-SURFACES.md). Existing reveal functionality is retained; this phase adds no further reveal animations or final scoreboard changes.

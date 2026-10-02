@@ -290,6 +290,7 @@ try {
   await waitText(guest, "Scorecard submitted");
   await waitText(host, "Casey:");
   await host.getByLabel("Lock anyway.", { exact: false }).check();
+  host.once("dialog", (d) => d.accept());
   await host
     .getByRole("button", { name: "Lock submissions & open results" })
     .click();
@@ -355,6 +356,7 @@ try {
   );
   await noOverflow(guest);
   await guest.evaluate(() => (document.documentElement.style.fontSize = ""));
+  await host.getByText("Event administration", { exact: true }).click();
   const downloadPromise = host.waitForEvent("download");
   await host.getByRole("link", { name: "Download CSV" }).click();
   const download = await downloadPromise;

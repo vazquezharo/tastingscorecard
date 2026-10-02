@@ -163,7 +163,13 @@ function position(index: number, count: number, shape: Seating["shape"]) {
   return { left: `${8 + x * 84}%`, top: `${10 + y * 80}%` };
 }
 
-export function TableDisplay({ event }: { event: PublicEvent }) {
+export function TableDisplay({
+  event,
+  readOnly = false,
+}: {
+  event: PublicEvent;
+  readOnly?: boolean;
+}) {
   const [layout, setLayout] = useState(() => {
     const saved = readLocal("tasting.display-layout.v1");
     return saved === "table" || saved === "compact" ? saved : "auto";
@@ -179,8 +185,8 @@ export function TableDisplay({ event }: { event: PublicEvent }) {
     return () => window.removeEventListener("resize", resize);
   }, []);
   const compact =
-    layout === "compact" ||
-    (layout === "auto" &&
+    (!readOnly && layout === "compact") ||
+    ((readOnly || layout === "auto") &&
       ((event.seating?.seats.length ?? 0) > 12 ||
         viewport.width < 1300 ||
         viewport.height < 1200 ||
@@ -195,15 +201,17 @@ export function TableDisplay({ event }: { event: PublicEvent }) {
     <section className="table-display" aria-label="Current round readiness">
       <h2>
         {event.phase === "setup"
-          ? "Find your seat"
+          ? readOnly
+            ? `${guests.length} guests joined`
+            : "Find your seat"
           : `${ready} / ${guests.length} ready for round ${event.unlocked}`}
       </h2>
       <p className="muted">
         {event.phase === "setup"
-          ? "Scan the code to join."
+          ? "Open the tasting link from the group chat; QR is optional."
           : "Ready = guess and rating saved. You can still edit until the host locks submissions."}
       </p>
-      {event.seating && (
+      {event.seating && !readOnly && (
         <label className="display-layout-control">
           Display layout
           <select
