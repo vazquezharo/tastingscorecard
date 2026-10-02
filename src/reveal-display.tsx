@@ -207,6 +207,12 @@ export function FinalDisplay({ event }: { event: PublicEvent }) {
   const summary = event.summary;
   if (!summary) return null;
   const champions = summary.leaderboard.filter((guest) => guest.rank === 1);
+  const lowestScore = summary.leaderboard.length
+    ? Math.min(...summary.leaderboard.map((guest) => guest.score))
+    : undefined;
+  const losers = summary.leaderboard.filter(
+    (guest) => guest.score === lowestScore,
+  );
   const favorites = summary.wines.filter(
     (wine) =>
       wine.average != null && wine.average === summary.wines[0]?.average,
@@ -285,7 +291,7 @@ export function FinalDisplay({ event }: { event: PublicEvent }) {
           ))}
         </div>
       </section>
-      {!!stats.length && (
+      <div className="final-bottom-grid">
         <section className="evening-stats" aria-label="Tonight’s stats">
           {stats.map((stat) => (
             <div key={stat.label}>
@@ -294,7 +300,33 @@ export function FinalDisplay({ event }: { event: PublicEvent }) {
             </div>
           ))}
         </section>
-      )}
+        <section
+          className={`loser-panel${losers.length > 3 ? " many-losers" : ""}`}
+          aria-label="Tasting losers"
+        >
+          <span className="eyebrow">
+            TASTING LOSER{losers.length > 1 ? "S" : ""}
+          </span>
+          <div className="loser-guests">
+            {losers.length ? (
+              losers.map((guest) => (
+                <div className="champion" key={guest.name}>
+                  <Avatar person={guest} />
+                  <div>
+                    <h2>{guest.name}</h2>
+                    <p>
+                      {guest.score} of 8 correct
+                      {guest.incomplete ? " · Incomplete card" : ""}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No participant scorecards.</p>
+            )}
+          </div>
+        </section>
+      </div>
       <p className="final-footnote">
         Eligible submitted ratings only · Ties share a rank · Rounded averages
         shown

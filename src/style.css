@@ -3537,3 +3537,160 @@ h3,
     grid-row: 1;
   }
 }
+
+/* Final summary: four room metrics down the left, lowest scorers on the right. */
+.final-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2vw;
+  margin-top: 18px;
+  align-items: start;
+}
+.final-bottom-grid .evening-stats {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 0;
+}
+.final-bottom-grid .evening-stats .eyebrow {
+  font-size: clamp(11px, 0.75vw, 14px);
+}
+.final-bottom-grid .evening-stats p {
+  font-size: clamp(14px, 1.1vw, 21px);
+  margin: 4px 0 0;
+}
+.loser-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.5vh 1.5vw;
+  min-width: 0;
+}
+.loser-panel .champion > div {
+  min-width: 0;
+}
+.loser-panel h2 {
+  overflow-wrap: anywhere;
+}
+.loser-guests {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  gap: 8px 16px;
+}
+.many-losers .champion h2 {
+  font-size: clamp(16px, 1.3vw, 26px);
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .final-bottom-grid {
+    margin-top: 12px;
+  }
+  .final-bottom-grid .evening-stats {
+    gap: 8px;
+  }
+  .final-bottom-grid .evening-stats p {
+    margin-top: 2px;
+    font-size: 14px;
+  }
+  .loser-guests {
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  }
+  .loser-panel .champion {
+    gap: 8px;
+    margin: 4px 0;
+  }
+  .loser-panel .champion h2 {
+    font-size: 20px;
+  }
+  .loser-panel .champion p {
+    font-size: 12px;
+  }
+  .loser-panel .avatar-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 900px) {
+  .final-bottom-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+.signature-final .final-wine-row {
+  line-height: 1.15;
+}
+.signature-final .final-wine-row p,
+.signature-final .final-wine-row small {
+  font-size: 0.75em;
+  line-height: 1.2;
+  margin: 1px 0;
+}
+.signature-final .group-favorite p {
+  font-size: clamp(13px, 0.9vw, 17px);
+  line-height: 1.25;
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .signature-final .final-wine-row .signature-bottle,
+  .signature-final .final-wine-row .bottle-fallback {
+    height: 40px;
+  }
+  .signature-final .final-wine-row p,
+  .signature-final .final-wine-row small {
+    font-size: 12px;
+  }
+}
+.final-bottom-grid .evening-stats .eyebrow {
+  display: block;
+  line-height: 1.2;
+}
+.final-bottom-grid .evening-stats p {
+  line-height: 1.25;
+}
+.signature-final .final-wine-row > div > strong,
+.signature-final .final-wine-row small {
+  display: block;
+}
+.signature-final .final-wine-row {
+  font-size: clamp(14px, 1vw, 19px);
+  padding: 4px 0;
+}
+.final-bottom-grid .evening-stats .eyebrow {
+  margin: 0;
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .signature-final .final-wine-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px 16px;
+  }
+  .signature-final .final-wine-row {
+    grid-template-columns: 18px minmax(0, 1fr) 30px;
+    gap: 6px;
+  }
+  .signature-final .final-wine-row > .signature-bottle,
+  .signature-final .final-wine-row > .bottle-fallback {
+    display: none;
+  }
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .many-losers .loser-guests {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .many-losers .champion {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+    margin: 0;
+  }
+  .many-losers .champion h2 {
+    font-size: 16px;
+  }
+  .many-losers .champion p {
+    font-size: 11px;
+    line-height: 1.2;
+    margin: 2px 0;
+  }
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .loser-panel.many-losers {
+    padding-block: 6px;
+  }
+}
