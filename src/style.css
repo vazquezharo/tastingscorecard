@@ -3408,6 +3408,35 @@ h3,
   }
 }
 
+/* Approved fuller rectangle: keep the public seats and clock within the room. */
+.event-display .table-map.table-rectangle.compact-seats {
+  width: 92%;
+  grid-template-rows: auto clamp(144px, 26vh, 280px) auto;
+}
+.event-display .table-rectangle.compact-seats .table-surface {
+  width: 100%;
+}
+.event-display .display-tasting:has(.table-rectangle) .table-display h2 {
+  margin-bottom: 24px;
+}
+@media (max-width: 1500px) {
+  .event-display .table-map.table-rectangle.compact-seats {
+    width: 100%;
+  }
+}
+@media (max-height: 800px) {
+  .event-display .display-room .table-map.table-rectangle.compact-seats {
+    grid-template-rows: auto 96px auto;
+  }
+  .event-display .display-tasting:has(.table-rectangle) .table-display h2 {
+    margin-bottom: 16px;
+  }
+  .event-display .display-tasting:has(.table-rectangle) h1 {
+    font-size: 40px;
+    margin: 6px 0;
+  }
+}
+
 /* Touch-first private seating map; rectangle sides match the Event Display. */
 .seating-preview-scroll {
   overflow-x: auto;
