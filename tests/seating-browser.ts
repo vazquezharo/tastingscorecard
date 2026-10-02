@@ -64,20 +64,40 @@ try {
   await host.getByText("Arrange table", { exact: true }).click();
   const editor = host.locator(".seating-editor");
   await editor
-    .getByLabel("Seat 1", { exact: true })
+    .getByLabel("Guest for seat 1", { exact: true })
     .locator("option", { hasText: "Alex" })
     .waitFor({ state: "attached" });
   const e = await read();
   const [a, b] = e.tableGuests;
   await editor.getByLabel("Table shape").selectOption("rectangle");
-  await editor.getByLabel("Seat 1", { exact: true }).selectOption(a.id);
-  await editor.getByLabel("Seat 7", { exact: true }).selectOption(b.id);
+  await editor
+    .getByLabel("Guest for seat 1", { exact: true })
+    .selectOption(a.id);
+  await editor
+    .getByRole("button", { name: "Seat 7: Empty seat", exact: true })
+    .click();
+  await editor
+    .getByLabel("Guest for seat 7", { exact: true })
+    .selectOption(b.id);
+  // Selecting an already-seated guest swaps locally without duplicating seats.
+  await editor
+    .getByLabel("Guest for seat 7", { exact: true })
+    .selectOption(a.id);
+  assert.equal(
+    await editor
+      .getByRole("button", { name: "Seat 1: Blair", exact: true })
+      .getAttribute("aria-pressed"),
+    "false",
+  );
+  await editor
+    .getByLabel("Guest for seat 7", { exact: true })
+    .selectOption(b.id);
   await editor.getByRole("button", { name: "Save seating" }).click();
   await editor.getByText("Seating saved.", { exact: true }).waitFor();
   await host.reload();
   await host.getByText("Arrange table", { exact: true }).click();
   assert.equal(
-    await editor.getByLabel("Seat 1", { exact: true }).inputValue(),
+    await editor.getByLabel("Guest for seat 1", { exact: true }).inputValue(),
     a.id,
   );
   assert.equal(
@@ -135,9 +155,7 @@ try {
       .getAttribute("href");
     await display.goto(origin + href);
   }
-  await display
-    .getByRole("heading", { name: "0 / 2 Ready" })
-    .waitFor();
+  await display.getByRole("heading", { name: "0 / 2 Ready" }).waitFor();
   for (const guest of guests) await guest.locator("#guess-1").waitFor();
   await guests[0].locator("#guess-1").selectOption(choices[0]);
   await guests[0].getByRole("button", { name: "8.0", exact: true }).click();
@@ -145,9 +163,7 @@ try {
   await guests[0]
     .locator(".round-card:not([hidden]) .save-state.confirmed")
     .waitFor();
-  await display
-    .getByRole("heading", { name: "1 / 2 Ready" })
-    .waitFor();
+  await display.getByRole("heading", { name: "1 / 2 Ready" }).waitFor();
   const pub = await (await dc.request.get(path + "?view=projector")).json();
   assert.deepEqual(
     Object.keys(pub.tableGuests[0]).sort(),
@@ -158,18 +174,12 @@ try {
   assert.equal(JSON.stringify(pub).includes("Private cocoa note"), false);
   assert.equal(JSON.stringify(pub).includes("St. Francis"), false);
   await guests[0].locator("#guess-1").selectOption("");
-  await display
-    .getByRole("heading", { name: "0 / 2 Ready" })
-    .waitFor();
+  await display.getByRole("heading", { name: "0 / 2 Ready" }).waitFor();
   await guests[1].locator("#guess-1").selectOption(choices[1]);
   await guests[1].getByRole("button", { name: "7.0", exact: true }).click();
-  await display
-    .getByRole("heading", { name: "1 / 2 Ready" })
-    .waitFor();
+  await display.getByRole("heading", { name: "1 / 2 Ready" }).waitFor();
   await control("unlock");
-  await display
-    .getByRole("heading", { name: "0 / 2 Ready" })
-    .waitFor();
+  await display.getByRole("heading", { name: "0 / 2 Ready" }).waitFor();
   for (const name of [
     "Casey",
     "Morgan",

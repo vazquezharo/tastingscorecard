@@ -17,16 +17,39 @@ export function SeatingEditor({
     event.seating ?? { shape: "round", seats: Array(12).fill(null) },
   );
   const [draft, setDraft] = useState<Seating>(() => JSON.parse(saved));
+  const [selectedSeat, setSelectedSeat] = useState(0);
   useEffect(() => {
     setDraft(JSON.parse(saved));
   }, [saved]);
   const changed = JSON.stringify(draft) !== saved;
+  const activeSeat = Math.min(selectedSeat, draft.seats.length - 1);
+  const seatButton = (index: number) => {
+    const guest = event.tableGuests.find((g) => g.id === draft.seats[index]);
+    return (
+      <button
+        key={index}
+        type="button"
+        className="seating-preview-seat"
+        aria-label={`Seat ${index + 1}: ${guest?.name || "Empty seat"}`}
+        aria-pressed={activeSeat === index}
+        onClick={() => setSelectedSeat(index)}
+        style={
+          draft.shape === "rectangle"
+            ? undefined
+            : position(index, draft.seats.length, draft.shape)
+        }
+      >
+        <small>Seat {index + 1}</small>
+        <strong title={guest?.name}>{guest?.name || "Empty"}</strong>
+      </button>
+    );
+  };
   return (
     <details className="seating-editor">
       <summary>Arrange table</summary>
       <p className="muted">
-        Place guests where they sit. The big-screen display shows who has saved
-        a guess and rating for the current round. Answers stay private.
+        Tap a seat on the table, then choose a guest. Save seating to update the
+        Event Display.
       </p>
       <fieldset disabled={disabled}>
         <div className="seating-controls">
@@ -85,36 +108,89 @@ export function SeatingEditor({
             ? "Seats run along the two long sides only: the top from left to right, then the bottom from right to left. Eight seats means four on each side, with nobody at the heads."
             : "Seats run clockwise from the top of the table."}
         </p>
-        <div className="seat-assignments">
-          {draft.seats.map((id, i) => (
-            <label key={i}>
-              Seat {i + 1}
-              <select
-                aria-label={`Seat ${i + 1}`}
-                value={id ?? ""}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    seats: draft.seats.map((s, j) =>
-                      i === j ? e.target.value || null : s,
-                    ),
-                  })
-                }
-              >
-                <option value="">Empty seat</option>
-                {event.tableGuests.map((g) => (
-                  <option
-                    key={g.id}
-                    value={g.id}
-                    disabled={g.id !== id && draft.seats.includes(g.id)}
-                  >
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
+        <div className="seating-preview-scroll">
+          <div
+            className={`seating-preview seating-preview-${draft.shape}`}
+            aria-label="Table seating preview"
+            style={
+              {
+                "--max-side-seats": Math.ceil(draft.seats.length / 2),
+              } as React.CSSProperties
+            }
+          >
+            {draft.shape === "rectangle" ? (
+              <>
+                <div
+                  className="seating-preview-side"
+                  style={
+                    {
+                      "--preview-seats": Math.ceil(draft.seats.length / 2),
+                    } as React.CSSProperties
+                  }
+                >
+                  {draft.seats
+                    .slice(0, Math.ceil(draft.seats.length / 2))
+                    .map((_, i) => seatButton(i))}
+                </div>
+                <div
+                  className="seating-preview-wood"
+                  aria-hidden="true"
+                  style={{ backgroundImage: `url(${walnutTabletop})` }}
+                />
+                <div
+                  className="seating-preview-side seating-preview-bottom"
+                  style={
+                    {
+                      "--preview-seats": Math.floor(draft.seats.length / 2),
+                    } as React.CSSProperties
+                  }
+                >
+                  {draft.seats
+                    .slice(Math.ceil(draft.seats.length / 2))
+                    .map((_, i) =>
+                      seatButton(i + Math.ceil(draft.seats.length / 2)),
+                    )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="seating-preview-wood" aria-hidden="true" />
+                {draft.seats.map((_, i) => seatButton(i))}
+              </>
+            )}
+          </div>
         </div>
+        <label className="seating-guest-picker">
+          Guest for seat {activeSeat + 1}
+          <select
+            aria-label={`Guest for seat ${activeSeat + 1}`}
+            value={draft.seats[activeSeat] ?? ""}
+            onChange={(e) => {
+              const guestId = e.target.value || null;
+              const previousSeat = guestId ? draft.seats.indexOf(guestId) : -1;
+              const seats = [...draft.seats];
+              if (previousSeat >= 0 && previousSeat !== activeSeat)
+                seats[previousSeat] = seats[activeSeat];
+              seats[activeSeat] = guestId;
+              setDraft({ ...draft, seats });
+            }}
+          >
+            <option value="">Empty seat</option>
+            {event.tableGuests.map((g) => {
+              const seat = draft.seats.indexOf(g.id);
+              return (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                  {seat >= 0 ? ` · Seat ${seat + 1}` : " · Unseated"}
+                </option>
+              );
+            })}
+          </select>
+        </label>
+        <p className="small muted">
+          Choosing someone already seated swaps the two seats. Choose Empty seat
+          to unseat a guest; their scorecard stays saved.
+        </p>
         <button
           type="button"
           className="primary"

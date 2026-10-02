@@ -3407,3 +3407,106 @@ h3,
     grid-template-rows: auto 72px auto;
   }
 }
+
+/* Touch-first private seating map; rectangle sides match the Event Display. */
+.seating-preview-scroll {
+  overflow-x: auto;
+  margin: 20px 0;
+  padding: 4px;
+}
+.seating-preview {
+  position: relative;
+  min-width: 660px;
+  height: 660px;
+}
+.seating-preview-seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  min-height: 56px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  border: 2px solid #765767;
+  border-radius: 10px;
+  background: #2b1d26;
+}
+.seating-preview-seat[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: #49342b;
+  box-shadow: 0 0 0 3px #d6ad6930;
+}
+.seating-preview-seat small {
+  font-size: 11px;
+  color: var(--gold);
+}
+.seating-preview-seat strong {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.seating-preview-wood {
+  position: absolute;
+  inset: 22%;
+  border: 2px solid #ac7c42;
+  background: radial-gradient(ellipse at center, #76502d, #382315);
+  border-radius: 18px;
+}
+.seating-preview-round .seating-preview-wood {
+  border-radius: 50%;
+}
+.seating-preview-square .seating-preview-seat {
+  min-height: 48px;
+  padding: 4px;
+}
+.seating-preview-square .seating-preview-seat small,
+.seating-preview-square .seating-preview-seat strong {
+  line-height: 1.1;
+}
+.seating-preview-rectangle {
+  min-width: calc(var(--max-side-seats) * 54px);
+  height: auto;
+  display: grid;
+  gap: 14px;
+}
+.seating-preview-rectangle .seating-preview-side {
+  display: grid;
+  grid-template-columns: repeat(var(--preview-seats), minmax(0, 1fr));
+  gap: 6px;
+}
+.seating-preview-bottom {
+  direction: rtl;
+}
+.seating-preview-rectangle .seating-preview-seat {
+  position: static;
+  transform: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  direction: ltr;
+}
+.seating-preview-rectangle .seating-preview-wood {
+  position: static;
+  width: 88%;
+  height: 100px;
+  margin: auto;
+  border: 0;
+  background-color: transparent;
+  background-size: 106% 230%;
+  background-position: center;
+}
+.seating-guest-picker {
+  display: block;
+  margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .seating-preview-rectangle {
+    min-width: max(480px, calc(var(--max-side-seats) * 54px));
+  }
+}
