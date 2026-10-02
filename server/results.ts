@@ -1,4 +1,5 @@
 import { tonightBottle } from "./tonight-bottles.js";
+import { hasLibraryBottle, libraryPhotoUrl } from "./bottle-library.js";
 import { ownsSeat } from "./identity.js";
 import {
   eventChoices,
@@ -75,7 +76,15 @@ export function wineResult(e: Event, r: number, reveal: boolean): WineResult {
       ? {
           wine: e.key[r - 1],
           producer: bottle?.producer ?? producerFor(e, e.key[r - 1]),
-          bottlePhoto: bottle?.image ?? e.bottlePhotos?.[e.key[r - 1]],
+          bottlePhoto:
+            bottle?.image ??
+            e.bottlePhotos?.[e.key[r - 1]] ??
+            (hasLibraryBottle(
+              e.key[r - 1],
+              bottle?.producer ?? producerFor(e, e.key[r - 1]),
+            )
+              ? libraryPhotoUrl(e.id, r)
+              : undefined),
           ...(bottle?.purchaseUrl || retailerUrl
             ? { purchaseUrl: bottle?.purchaseUrl ?? retailerUrl }
             : {}),

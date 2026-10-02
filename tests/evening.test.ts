@@ -181,7 +181,10 @@ test("bottle uploads and persisted timed reveals enforce secrecy, permissions an
     delete persisted.revealCountdown;
     delete persisted.bottlePhotos;
     assert.equal(publicEvent(persisted).results[0].wine, choices[0]);
-    assert.equal(publicEvent(persisted).results[0].bottlePhoto, undefined);
+    assert.equal(
+      publicEvent(persisted).results[0].bottlePhoto,
+      `/api/events/${event.id}/bottle-photo/1`,
+    );
   } finally {
     await new Promise<void>((r) => server.close(() => r()));
     await store.close();

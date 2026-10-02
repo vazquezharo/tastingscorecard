@@ -34,6 +34,83 @@ test("host-supplied retailer links appear only after the full tasting and match 
 import { tonight, tonightBottle } from "../server/tonight-bottles.ts";
 import { choices, type Event } from "../src/shared.ts";
 import { eveningStats, wineRanks } from "../src/reveal-stats.ts";
+
+test("Drive bottle photos are server-gated by reveal state, countdown and producer without modifying events", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bottle-library-"));
+  process.env.SQLITE_PATH = join(dir, "events.sqlite");
+  process.env.HOST_PASSWORD = "local-photo-test";
+  process.env.SESSION_SECRET =
+    "local-photo-test-secret-more-than-thirty-two-characters";
+  delete process.env.DATABASE_URL;
+  delete process.env.NODE_ENV;
+  delete process.env.VERCEL;
+  const store = makeStore();
+  const e = fixture();
+  await store.create(e);
+  const server = createApp(store).listen(0, "127.0.0.1");
+  await new Promise<void>((r) => server.once("listening", r));
+  const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const photo = (round: number) =>
+    fetch(`${origin}/api/events/${e.id}/bottle-photo/${round}`);
+  try {
+    assert.equal((await photo(1)).status, 404);
+    await store.mutate(e.id, (state) => {
+      state.phase = "tasting";
+      state.key = [...choices];
+      state.unlocked = 8;
+    });
+    assert.equal((await photo(1)).status, 404);
+    await store.mutate(e.id, (state) => {
+      state.phase = "locked";
+      state.presenting = 1;
+    });
+    assert.equal((await photo(1)).status, 404);
+    await store.mutate(e.id, (state) => {
+      state.revealed = 1;
+      state.revealCountdown = { round: 1, endsAt: Date.now() + 60000 };
+    });
+    assert.equal((await photo(1)).status, 404);
+    await store.mutate(e.id, (state) => {
+      delete state.revealCountdown;
+    });
+    const revealed = await photo(1);
+    assert.equal(revealed.status, 200);
+    assert.match(revealed.headers.get("content-type")!, /image\/png/);
+    assert.equal(revealed.headers.get("cache-control"), "no-store");
+    assert.ok((await revealed.arrayBuffer()).byteLength > 1000);
+    assert.equal((await photo(2)).status, 404);
+    await store.mutate(e.id, (state) => {
+      state.revealed = 8;
+      state.phase = "summary";
+    });
+    const before = await store.get(e.id);
+    for (let round = 1; round <= 8; round++)
+      assert.equal((await photo(round)).status, 200);
+    assert.deepEqual(await store.get(e.id), before);
+    await store.mutate(e.id, (state) => {
+      state.wines = choices.map((type) => ({
+        type,
+        producer: "Different bottle",
+      }));
+    });
+    assert.equal((await photo(1)).status, 404);
+    assert.equal((await photo(0)).status, 404);
+    assert.equal((await photo(9)).status, 404);
+    e.phase = "summary";
+    e.revealed = 8;
+    e.bottlePhotos = { [choices[0]]: "data:image/jpeg;base64,existing" };
+    assert.equal(
+      publicEvent(e).results[0].bottlePhoto,
+      e.bottlePhotos[choices[0]],
+    );
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((err) => (err ? reject(err) : resolve())),
+    );
+    await store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 function fixture(): Event {
   return {
     id: "f".repeat(32),

@@ -1,4 +1,5 @@
 import { normalizeBottlePhoto } from "./bottle-photo.js";
+import { libraryBottlePhoto } from "./bottle-library.js";
 import { normalizeAvatarPhoto } from "./avatar-photo.js";
 import { ownsSeat } from "./identity.js";
 import { validAvatar } from "../src/shared.js";
@@ -220,6 +221,22 @@ export function createApp(store?: Store) {
         req.query.host === "1",
       ),
     );
+  });
+  app.get(base + "/api/events/:id/bottle-photo/:round", async (req, res) => {
+    const round = Number(req.params.round);
+    assert(
+      Number.isInteger(round) && round >= 1 && round <= 8,
+      404,
+      "Photo not available.",
+    );
+    // Reuse the safe server projection, including countdown concealment.
+    // Knowing an event/round URL never bypasses the reveal state.
+    const state = publicEvent(await event(req));
+    const wine = state.results.find((w) => w.round === round && w.wine);
+    assert(wine?.wine && wine.producer, 404, "Photo not available.");
+    const photo = libraryBottlePhoto(wine.wine, wine.producer);
+    assert(photo, 404, "Photo not available.");
+    res.type(photo.mime).send(photo.bytes);
   });
   app.get(base + "/api/events/:id/qr", async (req, res) => {
     await event(req);

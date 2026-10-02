@@ -5,5 +5,10 @@
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
-  "functions": { "api/index.ts": { "maxDuration": 30 } }
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30,
+      "includeFiles": "server/bottle-images/**"
+    }
+  }
 }
