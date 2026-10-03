@@ -5,6 +5,7 @@ import {
   CreateRecoveryLink,
 } from "./recovery";
 import { RevealDisplay } from "./reveal-display";
+import { RoundSevenVideo } from "./round-seven-video";
 import { AssistedEntry } from "./assisted-entry";
 import { FinalScorecard } from "./final-scorecard";
 import {
@@ -1489,6 +1490,9 @@ function EventDisplay({ id }: { id: string }) {
       className={`projector event-display${data?.phase === "locked" || data?.phase === "summary" ? " signature-projector" : ""}`}
     >
       <Header mode="Event Display" />
+      {data && (
+        <RoundSevenVideo key={`${data.id}.${data.generation}`} event={data} />
+      )}
       {error && (
         <div className="narrow">
           <ErrorBox
